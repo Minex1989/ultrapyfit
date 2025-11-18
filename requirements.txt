@@ -2,6 +2,6 @@ matplotlib
 pandas
 numpy
 lmfit
-pyqt5
+pyside6
 scipy
 -e .
