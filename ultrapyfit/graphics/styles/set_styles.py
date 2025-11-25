@@ -10,6 +10,7 @@ from os.path import join, dirname, realpath
 import json
 from functools import wraps
 import matplotlib.pyplot as plt
+import matplotlib.style as mplstyle
 from ultrapyfit.graphics.styles.plot_base_functions import *
 
 UTF_STYLE_DIR = dirname(__file__)
@@ -17,11 +18,11 @@ UTF_BASIC_STYLES = realpath(join(UTF_STYLE_DIR, 'basic_styles'))
 STYLE_EXTENSION = 'mplstyle'
 STYLE_FILE_PATTERN = re.compile(r'([\S]+).%s$' % STYLE_EXTENSION)
 
-base = plt.style.core.load_base_library()
-base_update = plt.style.core.update_user_library(base)
-utf = plt.style.core.read_style_directory(UTF_BASIC_STYLES)
+mplstyle.reload_library()
+base = mplstyle.library
+utf = {name: mplstyle.library[name] for name in mplstyle.library if "utf" in name.lower()}
 
-library = {**base_update, **utf}
+library = {**base, **utf}
 
 
 def check_if_valid_style(name: str):
