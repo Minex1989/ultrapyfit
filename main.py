@@ -1,5 +1,5 @@
 import sys
-from application.windows.main_window import MainWindow
+from ultrapyfit.gui.windows.main_window import MainWindow
 from timeit import default_timer as timer
 from datetime import datetime
 from PySide6 import QtWidgets
