@@ -1,5 +1,4 @@
 from PySide6 import QtWidgets
-
 from ultrapyfit.gui.ui.ui_main_window import Ui_MainWindow
 from ultrapyfit.gui.windows.import_dialog import ImportDialog
 from ultrapyfit.experiment import Experiment
@@ -16,14 +15,14 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.import_dialog = ImportDialog(self)
 
         # Connect to the dialog's signals
-        self.import_dialog.parameters_accepted.connect(self.on_parameters_received)
+        self.import_dialog.parameters_accepted.connect(self.on_experiment_received)
 
         # Show the dialog (non-blocking with signals approach)
         self.import_dialog.exec()
 
-    def on_parameters_received(self, parameters):
+    def on_experiment_received(self, imported_experiment):
         """Slot called when parameters_accepted signal is emitted"""
-        self.separator, self.decimal, self.wave_is_row, self.time, self.wavelength = parameters
+        experiment = imported_experiment
 
         # Optional: Close the dialog if it's still open
         if self.import_dialog.isVisible():

@@ -5,266 +5,405 @@ from ultrapyfit.gui.ui.ui_import_dialog import Ui_ImportDialog
 from ultrapyfit.experiment import Experiment
 import csv
 import re
+from typing import List, Tuple, Optional, Any
+from dataclasses import dataclass
+
+
+@dataclass
+class ParsingConfig:
+    """Data structure to hold current parsing configuration."""
+    separator: str
+    decimal: str
+    is_transposed: bool  # Formerly wave_is_row
+    time_col_idx: int
+    wave_row_idx: int
+    time_unit_str: str
+    wave_unit_str: str
 
 
 class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
-    parameters_accepted = Signal(tuple)
+    """
+    Dialog for importing experimental data from text/CSV files.
+    Handles file previewing, separator detection, and Experiment object creation.
+    """
+    parameters_accepted = Signal(Experiment)
 
-    def __init__(self, parent=None):
+    # Pre-compiled regex for performance
+    _VALUE_UNIT_PATTERN = re.compile(r'(-?\d+\.?\d*)(.*)')
+
+    # Mapping for Separator ComboBox indices
+    _SEPARATOR_MAP = {
+        ';': 0, ':': 1, ',': 2, '\t': 3, '-': 4, '_': 5, ' ': 6, '|': 7
+    }
+
+    # Mapping for Unit ComboBox indices (based on original code logic)
+    _WAVE_UNIT_INDICES = {'nm': 0, '\u00B5m': 1, '\u03BCm': 1, 'pm': 2}
+    _TIME_UNIT_INDICES = {'ns': 0, '\u00B5s': 1, '\u03BCs': 1, 'ps': 2, 'fs': 3, 'as': 4}
+
+    def __init__(self, parent: Optional[QtWidgets.QWidget] = None):
         super(ImportDialog, self).__init__(parent)
         self.setupUi(self)
-        self.file_path = ""
-        self.ImportButton.clicked.connect(self.accept)
-        self.BrowseButton.clicked.connect(self.select_file)
-        self.SepComboBox.currentIndexChanged.connect(self.disable_separator_combo_box)
+
+        # Internal state
+        self._file_path: str = ""
+        self._cached_preview_text: str = ""  # Cache file content to avoid re-reading disk
+        self._allow_close: bool = False
+
+        self._setup_connections()
         self.FormatOptionsGroupBox.setDisabled(True)
 
-        # Connect all import groupbox widgets to update the table in case of change
-        self.SepComboBox.currentIndexChanged.connect(self.update_table)
-        self.OtherSepLineEdit.textChanged.connect(self.update_table)
-        self.WaveIsRowCheckBox.stateChanged.connect(self.update_table)
-        self.TimeColumnSpinBox.valueChanged.connect(self.update_table)
-        self.WavelengthRowSpinBox.valueChanged.connect(self.update_table)
+    def _setup_connections(self):
+        """Initializes all signal-slot connections."""
+        self.ImportButton.clicked.connect(self.accept)
+        self.BrowseButton.clicked.connect(self.select_file)
+        self.SepComboBox.currentIndexChanged.connect(self.toggle_custom_separator)
 
-    def update_table(self):
-        max_row = 15
-        if self.FilePathLineEdit.text() is not None:
-            separator, decimal, wave_is_row, time_col, wavelength_row, time_unit, wavelength_unit = self.get_parameters()
-            data, number_of_columns = self.parse_preview_native(self.file_path, separator, wavelength_row, time_col, wave_is_row)
-            wavelengths = [column for column in data[0][1:]]
-            times = [row[0] for row in data[1:]]
-            matrix_data = [row[1:] for row in data[1:]]
-            wavelengths_cleaned, wl_unit = self.process_wavelengths(wavelengths)
-            if wl_unit == '\u00B5m':
-                self.WavelengthMetricComboBox.setCurrentIndex(1)
-            elif wl_unit == 'pm':
-                self.WavelengthMetricComboBox.setCurrentIndex(2)
-            if 'ns' in data[0][0]:
-                self.TimeMetricComboBox.setCurrentIndex(1)
-            elif 'ps' in data[0][0]:
-                self.TimeMetricComboBox.setCurrentIndex(2)
-            elif 'fs' in data[0][0]:
-                self.TimeMetricComboBox.setCurrentIndex(3)
-            elif 'as' in data[0][0]:
-                self.TimeMetricComboBox.setCurrentIndex(4)
-            if max_row > len(matrix_data):
-                max_row = len(matrix_data)
-            self.tableWidget.setRowCount(0)
-            self.tableWidget.setColumnCount(number_of_columns-1)
-            self.tableWidget.setHorizontalHeaderLabels([f"{round(w, 2)}" for w in wavelengths_cleaned])
-            self.tableWidget.setRowCount(max_row)
-            for row_idx in range(max_row):
-                for col_idx in range(len(wavelengths_cleaned)):
-                    value = matrix_data[row_idx][col_idx]
+        # UI triggers for updating the preview table
+        update_triggers = [
+            self.SepComboBox.currentIndexChanged,
+            self.OtherSepLineEdit.textChanged,
+            self.WaveIsRowCheckBox.stateChanged,
+            self.TimeColumnSpinBox.valueChanged,
+            self.WavelengthRowSpinBox.valueChanged,
+            self.DecComboBox.currentIndexChanged
+        ]
+        for signal in update_triggers:
+            signal.connect(self.update_table_preview)
+
+    def select_file(self):
+        """
+        Opens a file dialog for the user to select a data file.
+        If selected, attempts to auto-detect CSV dialect and loads preview.
+        """
+        dialog = QtWidgets.QFileDialog()
+        dialog.setNameFilter("Szöveges fájlok (*.csv *.txt *.dat);;Összes fájlok (*.*)")
+        dialog.setFileMode(QtWidgets.QFileDialog.FileMode.ExistingFile)
+
+        if dialog.exec():
+            selected_files = dialog.selectedFiles()
+            if not selected_files:
+                return
+
+            self._file_path = selected_files[0]
+            self.FilePathLineEdit.setText(self._file_path)
+            self.FormatOptionsGroupBox.setEnabled(True)
+            self.OtherSepLineEdit.setDisabled(True)
+
+            # Read file once and cache it
+            self._cached_preview_text = self._read_file(self._file_path)
+
+            # Auto-detect format
+            self._detect_dialect(self._cached_preview_text)
+
+            # Refresh UI
+            self.update_table_preview()
+
+    def update_table_preview(self):
+        """
+        Main logic to parse the cached text based on UI settings
+        and populate the QTableWidget.
+        """
+        if not self._cached_preview_text:
+            return
+
+        config = self.get_parsing_config()
+
+        # Parse data from the cached string, not the file
+        raw_matrix, max_cols = self._parse_text_data(
+            self._cached_preview_text,
+            config.separator,
+            config.is_transposed,
+            config.wave_row_idx,
+            config.time_col_idx
+        )
+
+        if not raw_matrix or len(raw_matrix) < 2:
+            return
+
+        # Extract headers and data
+        try:
+            # Assuming row 0 is headers (wavelengths) and col 0 is index (times) after parsing logic
+            # This logic assumes the structure [Header, Data...]
+
+            # Slice headers
+            wavelength_headers = raw_matrix[0][1:]
+
+            # Slice data
+            data_rows = raw_matrix[1:]
+            times = [row[0] for row in data_rows if row]
+            values_matrix = [row[1:] for row in data_rows if len(row) > 1]
+
+            # Auto-detect units based on headers
+            cleaned_wavelengths, detected_wl_unit = self._process_wavelength_headers(wavelength_headers)
+            self._auto_select_units(raw_matrix[0][0], detected_wl_unit)
+
+            # Update Table Widget
+            self._populate_table_widget(cleaned_wavelengths, times, values_matrix)
+
+        except IndexError:
+            # Handle cases where parsing creates empty or malformed lists
+            pass
+
+    def _populate_table_widget(self, headers: List[float], row_labels: List[Any], data: List[List[Any]]):
+        """
+        Updates the QTableWidget with processed data.
+
+        Args:
+            headers: List of float values for column headers.
+            row_labels: List of values for row headers (time).
+            data: 2D list of data values.
+        """
+        max_preview_rows = min(15, len(data))
+
+        self.tableWidget.setRowCount(0)  # Clear
+        self.tableWidget.setColumnCount(len(headers))
+        self.tableWidget.setHorizontalHeaderLabels([f"{h:.2f}" for h in headers])
+        self.tableWidget.setRowCount(max_preview_rows)
+        self.tableWidget.setVerticalHeaderLabels([f"{str(t)[:6]}" for t in row_labels[:max_preview_rows]])
+
+        for row_idx in range(max_preview_rows):
+            for col_idx in range(len(headers)):
+                if col_idx < len(data[row_idx]):
+                    value = str(data[row_idx][col_idx])
                     item = QtWidgets.QTableWidgetItem(value)
                     self.tableWidget.setItem(row_idx, col_idx, item)
-            self.tableWidget.setVerticalHeaderLabels([f"{t:.4}" for t in times])
+
+    def get_parsing_config(self) -> ParsingConfig:
+        """
+        Aggregates current UI state into a configuration object.
+
+        Returns:
+            ParsingConfig: The current settings from the UI.
+        """
+
+        # Helper to extract text inside parentheses: "Tab (\t)" -> "\t"
+        def extract_paren(text):
+            return text.split('(')[1].replace(')', '') if '(' in text else text
+
+        decimal = extract_paren(self.DecComboBox.currentText())
+
+        # Determine separator
+        if self.OtherSepLineEdit.isEnabled():
+            separator = self.OtherSepLineEdit.text()
+        else:
+            separator = extract_paren(self.SepComboBox.currentText())
+            # Handle special display case for tab
+            if separator == '\\t':
+                separator = '\t'
+
+        return ParsingConfig(
+            separator=separator,
+            decimal=decimal,
+            is_transposed=self.WaveIsRowCheckBox.isChecked(),
+            time_col_idx=int(self.TimeColumnSpinBox.value()) - 1,
+            wave_row_idx=int(self.WavelengthRowSpinBox.value()) - 1,
+            time_unit_str=extract_paren(self.TimeMetricComboBox.currentText()),
+            wave_unit_str=extract_paren(self.WavelengthMetricComboBox.currentText())
+        )
+
+    def accept(self):
+        """
+        Triggered by the Import button.
+        Creates the Experiment object and emits it via signal.
+        """
+        try:
+            experiment = self.create_experiment()
+            self.parameters_accepted.emit(experiment)
+            self._allow_close = True
+            super().accept()
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, "Error", f"Nem sikerült beolvasni a fájlt:\n{str(e)}")
+
+    def create_experiment(self) -> Experiment:
+        """
+        Instantiates the Experiment object using the library's loader.
+
+        Returns:
+            Experiment: The loaded experiment object.
+        """
+        config = self.get_parsing_config()
+
+        experiment = Experiment.load_data(
+            self._file_path,
+            config.wave_row_idx,
+            config.time_col_idx,
+            config.is_transposed,
+            config.separator,
+            config.decimal
+        )
+
+        experiment.time_unit = config.time_unit_str
+        experiment.wavelength_unit = config.wave_unit_str
+
+        # Optional logging
+        # print(f"Loaded Experiment with {len(experiment.time)} time points.")
+        experiment.describe_data()
+
+        return experiment
 
     def closeEvent(self, event: QCloseEvent):
-        """Handle when the dialog is closed via X button"""
+        """
+        Intercepts the close event to ask for confirmation if not saved.
+        """
+        if self._allow_close:
+            event.accept()
+            return
+
         reply = QtWidgets.QMessageBox.question(
-            self, "Bezárás megerősítése", "Biztosan be akarja zárni a mentés nélkül?",
+            self,
+            "Bezárás megerősítése",
+            "Biztosan be akarja zárni a importálás nélkül?",
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No
         )
 
         if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            self.reject()  # Send reject signal
             event.accept()
         else:
-            event.ignore()  # Keep the dialog open
+            event.ignore()
 
-    def accept(self):
-        """Override accept to emit signal before closing"""
-        parameters = self.get_parameters()
-        self.parameters_accepted.emit(parameters)  # Emit the signal
-        super().accept()
+    def toggle_custom_separator(self):
+        """Enables/Disables the custom separator line edit based on combobox selection."""
+        is_custom = self.SepComboBox.currentIndex() == self.SepComboBox.count() - 1
+        self.OtherSepLineEdit.setEnabled(is_custom)
 
-    def get_parameters(self):
-        decimal = self.DecComboBox.currentText().split('(')[1].replace(')', '')
-        wave_is_row = self.WaveIsRowCheckBox.isChecked()
-        time = int(self.TimeColumnSpinBox.value()) - 1
-        wavelength = int(self.WavelengthRowSpinBox.value()) - 1
-        time_unit = self.TimeMetricComboBox.currentText().split('(')[1].replace(')', '')
-        wavelength_unit = self.WavelengthMetricComboBox.currentText().split('(')[1].replace(')', '')
-        if self.OtherSepLineEdit.isEnabled():
-            separator = self.OtherSepLineEdit.text()
-        else:
-            separator = self.SepComboBox.currentText().split('(')[1].replace(')', '')
-        return separator, decimal, wave_is_row, time, wavelength, time_unit, wavelength_unit
+    # -------------------------------------------------------------------------
+    # Logic / Helper Methods (Internal)
+    # -------------------------------------------------------------------------
 
-    def disable_separator_combo_box(self):
-        if self.SepComboBox.currentIndex() == self.SepComboBox.count() - 1:
-            self.OtherSepLineEdit.setEnabled(True)
-        else:
-            self.OtherSepLineEdit.setDisabled(True)
+    def _auto_select_units(self, time_sample: str, wave_unit: str):
+        """
+        Updates the Unit ComboBoxes based on detected strings in data.
 
-    def select_file(self):
-        dialog = QtWidgets.QFileDialog()
-        dialog.setNameFilter("Szöveges fájlok (*.csv *.txt)")
-        dialog.setFileMode(QtWidgets.QFileDialog.FileMode.ExistingFile)
-        dialog_successful = dialog.exec()
-        if dialog_successful:
-            self.file_path = dialog.selectedFiles()[0]
-            self.FilePathLineEdit.setText(self.file_path)
-            self.FormatOptionsGroupBox.setEnabled(True)
-            self.OtherSepLineEdit.setDisabled(True)
-            sample = self.read_file_preview(self.file_path)
-            try:
-                dialect = csv.Sniffer().sniff(sample)
-                if dialect.delimiter == ';':
-                    self.SepComboBox.setCurrentIndex(0)
-                elif dialect.delimiter == ':':
-                    self.SepComboBox.setCurrentIndex(1)
-                elif dialect.delimiter == ',':
-                    self.SepComboBox.setCurrentIndex(2)
-                elif dialect.delimiter == '\t':
-                    self.SepComboBox.setCurrentIndex(3)
-                elif dialect.delimiter == '-':
-                    self.SepComboBox.setCurrentIndex(4)
-                elif dialect.delimiter == '_':
-                    self.SepComboBox.setCurrentIndex(5)
-                elif dialect.delimiter == ' ':
-                    self.SepComboBox.setCurrentIndex(6)
-                elif dialect.delimiter == '|':
-                    self.SepComboBox.setCurrentIndex(7)
-            except csv.Error:
+        Args:
+            time_sample: A sample string from the time column (e.g., "0.01 ns").
+            wave_unit: The unit detected in the wavelength header (e.g., "nm").
+        """
+        # Set Wavelength Unit
+        if wave_unit in self._WAVE_UNIT_INDICES:
+            self.WavelengthMetricComboBox.setCurrentIndex(self._WAVE_UNIT_INDICES[wave_unit])
+
+        # Set Time Unit
+        time_sample_str = str(time_sample)
+        for unit, index in self._TIME_UNIT_INDICES.items():
+            if unit in time_sample_str:
+                self.TimeMetricComboBox.setCurrentIndex(index)
+                break
+
+    def _detect_dialect(self, sample_text: str):
+        """
+        Uses csv.Sniffer to guess the delimiter of the text.
+        Updates the UI SepComboBox accordingly.
+        """
+        try:
+            dialect = csv.Sniffer().sniff(sample_text)
+            delimiter = dialect.delimiter
+
+            if delimiter in self._SEPARATOR_MAP:
+                self.SepComboBox.setCurrentIndex(self._SEPARATOR_MAP[delimiter])
+            else:
+                # Default to custom or fallback
                 self.SepComboBox.setCurrentIndex(8)
-                pass
-            self.update_table()
+        except csv.Error:
+            self.SepComboBox.setCurrentIndex(8)
 
-    @staticmethod
-    def read_file_preview(file_path, num_lines=15, max_bytes=16384):
+    def _process_wavelength_headers(self, raw_headers: List[str]) -> Tuple[List[float], str]:
         """
-        Reads the first 'num_lines' of a file safely.
-
-        Args:
-            file_path (str): Path to the file.
-            num_lines (int): Max lines to read (default 15).
-            max_bytes (int): Safety limit to stop reading if lines are massive.
+        Cleans header strings to extract numerical wavelength values and unit.
 
         Returns:
-            str: A single string containing the preview data.
-        """
-        preview_data = []
-        current_bytes = 0
-
-        try:
-            # 'utf-8-sig' handles standard UTF-8 AND Excel's BOM signature
-            # 'errors="replace"' puts a  character instead of crashing on weird bytes
-            with open(file_path, 'r', encoding='utf-8-sig', errors='replace') as f:
-
-                for _ in range(num_lines):
-                    # Read one line
-                    line = f.readline()
-
-                    # Stop if end of file
-                    if not line:
-                        break
-
-                    preview_data.append(line)
-
-                    # Safety check: Stop if we've read too much data (e.g. 16KB)
-                    current_bytes += len(line.encode('utf-8'))
-                    if current_bytes > max_bytes:
-                        break
-
-        except Exception as e:
-            return f"Error reading file: {str(e)}"
-
-        return "".join(preview_data)
-
-    @staticmethod
-    def parse_preview_native(file_path, separator, skip_rows=0, skip_cols=0, transpose=False):
-        """
-        Parses a file, skips rows/cols, and optionally transposes the result.
-
-        Args:
-            file_path (str): Path to file.
-            separator (str): 'Tab', 'Comma', 'Semicolon', etc.
-            skip_rows (int): Number of metadata lines to ignore.
-            skip_cols (int): Number of columns to ignore from the left.
-            transpose (bool): If True, swaps rows and columns.
-        Returns:
-        tuple: (data_list, max_columns)
-               data_list is [[row1_col1, row1_col2], [row2_col1...]]
-        """
-        if separator == '\\t':
-            separator = '\t'
-        data = []
-        try:
-            with open(file_path, 'r', encoding='utf-8-sig', newline='') as f:
-                for _ in range(skip_rows):
-                    next(f, None)
-                reader = csv.reader(f, delimiter=separator)
-                for i, row in enumerate(reader):
-                    if not row:
-                        continue
-                    if skip_cols < len(row):
-                        cleaned_row = row[skip_cols:]
-                    else:
-                        cleaned_row = []
-                    data.append(cleaned_row)
-        except Exception as e:
-            return [[f"Error: {e}"]], 1
-        if transpose and data:
-            try:
-                data = list(map(list, zip(*data)))
-            except ValueError:
-                pass
-        max_cols = max(len(row) for row in data) if data else 0
-
-        return data, max_cols
-
-    @staticmethod
-    def clean_header_value(raw_value):
-        """
-        Separates a string like '450 nm' into (450.0, 'nm').
-        Returns:
-            tuple: (float_value, unit_string)
-        """
-        # Convert to string just in case
-        text = str(raw_value).strip()
-
-        # regex pattern:
-        #   (-?\d+\.?\d*) -> Captures the number (integer or float, positive or negative)
-        #   (.*)          -> Captures everything else (the unit)
-        match = re.search(r'(-?\d+\.?\d*)(.*)', text)
-
-        if match:
-            number_str = match.group(1)
-            unit_str = match.group(2).strip()
-
-            # Clean up common brackets: "(nm)" -> "nm"
-            unit_str = unit_str.replace('(', '').replace(')', '').strip()
-
-            try:
-                return float(number_str), unit_str
-            except ValueError:
-                pass  # Failed to convert number
-
-        # Fallback: If no number found (e.g. just "Wavelength"), return as-is
-        return None, text
-
-    def process_wavelengths(self, raw_wavelengths):
-        """
-        Cleans a list of wavelength headers.
+            Tuple: (List of floats, detected unit string)
         """
         clean_values = []
         detected_units = set()
 
-        for item in raw_wavelengths:
-            val, unit = self.clean_header_value(item)
+        for item in raw_headers:
+            val, unit = self._extract_value_and_unit(item)
 
             if val is not None:
                 clean_values.append(val)
                 if unit:
                     detected_units.add(unit)
             else:
-                # Handle error (or keep 0.0)
                 clean_values.append(0.0)
 
-        # If we found a unit (like "nm"), save it for later!
         final_unit = list(detected_units)[0] if detected_units else ""
-
         return clean_values, final_unit
+
+    @classmethod
+    def _extract_value_and_unit(cls, raw_value: Any) -> Tuple[Optional[float], str]:
+        """
+        Separates a string like '450 nm' into (450.0, 'nm').
+        """
+        text = str(raw_value).strip()
+        match = cls._VALUE_UNIT_PATTERN.search(text)
+
+        if match:
+            number_str = match.group(1)
+            unit_str = match.group(2).strip()
+            # Clean brackets: "(nm)" -> "nm"
+            unit_str = unit_str.replace('(', '').replace(')', '').strip()
+            try:
+                return float(number_str), unit_str
+            except ValueError:
+                pass
+
+        return None, text
+
+    @staticmethod
+    def _read_file(file_path: str) -> str:
+        """
+        Reads the beginning of a file safely to use for previewing.
+
+        Args:
+            file_path: Path to file.
+        """
+        data = []
+        try:
+            with open(file_path, 'r', encoding='utf-8-sig', errors='replace') as f:
+                for line in f:
+                    if not line: break
+                    data.append(line)
+        except Exception as e:
+            return ""
+        return "".join(data)
+
+    @staticmethod
+    def _parse_text_data(text_data: str, separator: str, transpose: bool, skip_header_lines: int = 0,
+                         skip_cols: int = 0) -> Tuple[List[List[str]], int]:
+        """
+        Parses a raw string into a matrix (list of lists) based on separator.
+
+        Args:
+            text_data: The raw string content (CSV/Txt).
+            separator: Delimiter character.
+            transpose: Whether to swap rows and columns.
+
+        Returns:
+            Tuple: (The data matrix, max number of columns found)
+        """
+        data = []
+        try:
+            lines = text_data.splitlines()
+            reader = csv.reader(lines[skip_header_lines:], delimiter=separator)
+            has_started_data = False
+            for row in reader:
+                is_empty = not row or (len(row) == 1 and not row[0].strip())
+                if is_empty and not has_started_data:
+                    continue
+                if skip_cols < len(row):
+                    cleaned_row = row[skip_cols:]
+                else:
+                    cleaned_row = []
+                data.append(cleaned_row)
+                if not is_empty:
+                    has_started_data = True
+        except Exception as e:
+            return [[f"Error: {e}"]], 1
+        if transpose and data:
+            try:
+                data = list(map(list, zip(*data)))
+            except ValueError:
+                return [], 0
+        max_cols = max(len(row) for row in data) if data else 0
+        return data, max_cols

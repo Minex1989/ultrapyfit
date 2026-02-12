@@ -419,12 +419,12 @@
     </property>
     <item>
      <property name="text">
-      <string>Microsecond (µs)</string>
+      <string>Nanosecond (ns)</string>
      </property>
     </item>
     <item>
      <property name="text">
-      <string>Nanosecond (ns)</string>
+      <string>Microsecond (μs)</string>
      </property>
     </item>
     <item>
