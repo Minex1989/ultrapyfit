@@ -54,14 +54,14 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
 
     def _setup_connections(self):
         """Initializes all signal-slot connections."""
-        self.ImportButton.clicked.connect(self.accept)
+        self.ImportButton.clicked.connect(self.import_experiment)
         self.BrowseButton.clicked.connect(self.select_file)
         self.SepComboBox.currentIndexChanged.connect(self.toggle_custom_separator)
 
         # UI triggers for updating the preview table
         update_triggers = [
             self.SepComboBox.currentIndexChanged,
-            self.OtherSepLineEdit.textChanged,
+            self.OtherSepLineEdit.editingFinished,
             self.WaveIsRowCheckBox.stateChanged,
             self.TimeColumnSpinBox.valueChanged,
             self.WavelengthRowSpinBox.valueChanged,
@@ -106,41 +106,41 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
         if not self._cached_preview_text:
             return
 
-        config = self.get_parsing_config()
+        # config = self.get_parsing_config()
 
         # Parse data from the cached string, not the file
-        raw_matrix, max_cols = self._parse_text_data(
-            self._cached_preview_text,
-            config.separator,
-            config.is_transposed,
-            config.wave_row_idx,
-            config.time_col_idx
-        )
 
-        if not raw_matrix or len(raw_matrix) < 2:
-            return
+        # raw_matrix, max_cols = self._parse_text_data(
+        #     self._cached_preview_text,
+        #     config.separator,
+        #     config.is_transposed,
+        #     config.wave_row_idx,
+        #     config.time_col_idx
+        # )
+
+        # if not raw_matrix or len(raw_matrix) < 2:
+        #     return
 
         # Extract headers and data
         try:
             # Assuming row 0 is headers (wavelengths) and col 0 is index (times) after parsing logic
             # This logic assumes the structure [Header, Data...]
-
+            preview_experiment = self.create_experiment()
             # Slice headers
-            wavelength_headers = raw_matrix[0][1:]
+            wavelength_headers = preview_experiment.wavelength
 
             # Slice data
-            data_rows = raw_matrix[1:]
-            times = [row[0] for row in data_rows if row]
-            values_matrix = [row[1:] for row in data_rows if len(row) > 1]
+            times = preview_experiment.time
+            values_matrix = preview_experiment.data
 
             # Auto-detect units based on headers
             cleaned_wavelengths, detected_wl_unit = self._process_wavelength_headers(wavelength_headers)
-            self._auto_select_units(raw_matrix[0][0], detected_wl_unit)
+            self._auto_select_units(preview_experiment.time_unit, detected_wl_unit)
 
             # Update Table Widget
             self._populate_table_widget(cleaned_wavelengths, times, values_matrix)
 
-        except IndexError:
+        except Exception:
             # Handle cases where parsing creates empty or malformed lists
             pass
 
@@ -201,18 +201,39 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
             wave_unit_str=extract_paren(self.WavelengthMetricComboBox.currentText())
         )
 
-    def accept(self):
+    def import_experiment(self):
         """
         Triggered by the Import button.
         Creates the Experiment object and emits it via signal.
         """
         try:
             experiment = self.create_experiment()
-            self.parameters_accepted.emit(experiment)
             self._allow_close = True
-            super().accept()
+            self.parameters_accepted.emit(experiment)
+            self.accept()
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error", f"Nem sikerült beolvasni a fájlt:\n{str(e)}")
+
+    def closeEvent(self, event: QCloseEvent):
+        """
+        Intercepts the close event to ask for confirmation if not saved.
+        """
+        if self._allow_close:
+            event.accept()
+            return
+
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            "Bezárás megerősítése",
+            "Biztosan be akarja zárni a importálás nélkül?",
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
+        )
+
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            event.accept()
+        else:
+            event.ignore()
 
     def create_experiment(self) -> Experiment:
         """
@@ -240,27 +261,6 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
         experiment.describe_data()
 
         return experiment
-
-    def closeEvent(self, event: QCloseEvent):
-        """
-        Intercepts the close event to ask for confirmation if not saved.
-        """
-        if self._allow_close:
-            event.accept()
-            return
-
-        reply = QtWidgets.QMessageBox.question(
-            self,
-            "Bezárás megerősítése",
-            "Biztosan be akarja zárni a importálás nélkül?",
-            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
-            QtWidgets.QMessageBox.StandardButton.No
-        )
-
-        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
-            event.accept()
-        else:
-            event.ignore()
 
     def toggle_custom_separator(self):
         """Enables/Disables the custom separator line edit based on combobox selection."""
@@ -368,42 +368,42 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
             return ""
         return "".join(data)
 
-    @staticmethod
-    def _parse_text_data(text_data: str, separator: str, transpose: bool, skip_header_lines: int = 0,
-                         skip_cols: int = 0) -> Tuple[List[List[str]], int]:
-        """
-        Parses a raw string into a matrix (list of lists) based on separator.
-
-        Args:
-            text_data: The raw string content (CSV/Txt).
-            separator: Delimiter character.
-            transpose: Whether to swap rows and columns.
-
-        Returns:
-            Tuple: (The data matrix, max number of columns found)
-        """
-        data = []
-        try:
-            lines = text_data.splitlines()
-            reader = csv.reader(lines[skip_header_lines:], delimiter=separator)
-            has_started_data = False
-            for row in reader:
-                is_empty = not row or (len(row) == 1 and not row[0].strip())
-                if is_empty and not has_started_data:
-                    continue
-                if skip_cols < len(row):
-                    cleaned_row = row[skip_cols:]
-                else:
-                    cleaned_row = []
-                data.append(cleaned_row)
-                if not is_empty:
-                    has_started_data = True
-        except Exception as e:
-            return [[f"Error: {e}"]], 1
-        if transpose and data:
-            try:
-                data = list(map(list, zip(*data)))
-            except ValueError:
-                return [], 0
-        max_cols = max(len(row) for row in data) if data else 0
-        return data, max_cols
+    # @staticmethod
+    # def _parse_text_data(text_data: str, separator: str, transpose: bool, skip_header_lines: int = 0,
+    #                      skip_cols: int = 0) -> Tuple[List[List[str]], int]:
+    #     """
+    #     Parses a raw string into a matrix (list of lists) based on separator.
+    #
+    #     Args:
+    #         text_data: The raw string content (CSV/Txt).
+    #         separator: Delimiter character.
+    #         transpose: Whether to swap rows and columns.
+    #
+    #     Returns:
+    #         Tuple: (The data matrix, max number of columns found)
+    #     """
+    #     data = []
+    #     try:
+    #         lines = text_data.splitlines()
+    #         reader = csv.reader(lines[skip_header_lines:], delimiter=separator)
+    #         has_started_data = False
+    #         for row in reader:
+    #             is_empty = not row or (len(row) == 1 and not row[0].strip())
+    #             if is_empty and not has_started_data:
+    #                 continue
+    #             if skip_cols < len(row):
+    #                 cleaned_row = row[skip_cols:]
+    #             else:
+    #                 cleaned_row = []
+    #             data.append(cleaned_row)
+    #             if not is_empty:
+    #                 has_started_data = True
+    #     except Exception as e:
+    #         return [[f"Error: {e}"]], 1
+    #     if transpose and data:
+    #         try:
+    #             data = list(map(list, zip(*data)))
+    #         except ValueError:
+    #             return [], 0
+    #     max_cols = max(len(row) for row in data) if data else 0
+    #     return data, max_cols

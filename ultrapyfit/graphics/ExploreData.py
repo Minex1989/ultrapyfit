@@ -301,41 +301,70 @@ class ExploreData(PlotSVD):
         return fig, ax
 
     @use_style
-    def plot_3D(self, cmap=None, figsize=(12, 8)):
+    def plot_3D(self, cmap=None, figsize=(6, 5), plot_type='surface', stride=5, elev=30, azim=-60):
         """
-        Plot the data in 3D
+        Enhanced 3D Plotter
 
         Parameters
         ----------
         cmap: str or None
-            name of matplotlib color map if None the attribute color_map will
-             be use
-
+            name of matplotlib color map if None the attribute color_map will be use
         figsize: tuple
             Size of the figure similar to matplotlib figsize
-
-        Returns
-        ----------
-        Figure and axes matplotlib objects
+        plot_type : str
+            'surface', 'wireframe', or 'contour'
+        stride : int
+            Downsampling factor. Higher = Faster but less detailed.
+            (e.g., stride=1 plots every point, stride=5 plots every 5th point)
+        elev, azim : int
+            Initial camera elevation and azimuth angles.
         """
         cmap = self._get_cmap(cmap)
-        x = self.x
+
+        # 1. Apply Stride (Downsampling) for performance
+        # We slice the arrays: data[::stride]
         z = self.data.transpose()
+        x = self.x
         y = self.wavelength
+
+        # Create the meshgrid
+        X, Y = np.meshgrid(x, y)
+
+        # 2. Setup Figure
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111, projection='3d')
+
+        # 3. Handle Plot Types
+        if plot_type == 'surface':
+            # rstride/cstride controls how many polygons are drawn (Visual downsampling)
+            surf = ax.plot_surface(X, Y, z, cmap=cmap,
+                                   linewidth=0, antialiased=False,
+                                   rstride=stride, cstride=stride)
+            fig.colorbar(surf, shrink=0.5, aspect=5)
+
+        elif plot_type == 'wireframe':
+            # Wireframe is great for seeing "inside" the data
+            ax.plot_wireframe(X, Y, z, rstride=stride, cstride=stride,
+                              color='black', linewidth=0.5)
+
+        elif plot_type == 'contour':
+            # Projects the 3D shape onto the walls or floor
+            ax.contour3D(X, Y, z, 50, cmap=cmap)
+
+        # 4. Set Labels & View
         if self._units["wavelength_unit"] == 'cm-1':
             xlabel = 'Wavenumber (cm$^{-1}$)'
         else:
             xlabel = f'Wavelength ({self._units["wavelength_unit"]})'
-        x, y = np.meshgrid(x, y)
-        fig = plt.figure(figsize=figsize)
-        ax = fig.gca(projection='3d')
-        surf = ax.plot_surface(x, y, z, cmap=cmap,
-                               linewidth=0, antialiased=False)
-        ax.set_zlim(np.min(z), np.max(z))
+
         ax.set_xlabel(f'Time ({self._units["time_unit"]})')
         ax.set_ylabel(xlabel)
         ax.set_zlabel('$\Delta$A')
-        fig.colorbar(surf, shrink=0.5, aspect=5)
+        ax.set_zlim(np.min(z), np.max(z))
+
+        # Set initial camera angle
+        ax.view_init(elev=elev, azim=azim)
+
         return fig, ax
 
     def select_traces(self, points=10, average=1, avoid_regions=None):
