@@ -176,7 +176,7 @@ class ExploreData(PlotSVD):
             legenda = self._traces_legend(traces, values)
             ax.legend(legenda, loc='best', ncol=2)
         FiguresFormating.axis_labels(ax, f'Time ({self._units["time_unit"]})',
-                                     '$\Delta$A')
+                                     r'$\Delta$A')
         return fig, ax
 
     @use_style
@@ -332,6 +332,7 @@ class ExploreData(PlotSVD):
 
         # 2. Setup Figure
         fig = plt.figure(figsize=figsize)
+        fig.subplots_adjust(left=0.0, right=0.85, bottom=-0.3, top=1.3)
         ax = fig.add_subplot(111, projection='3d')
 
         # 3. Handle Plot Types
@@ -340,7 +341,12 @@ class ExploreData(PlotSVD):
             surf = ax.plot_surface(X, Y, z, cmap=cmap,
                                    linewidth=0, antialiased=False,
                                    rstride=stride, cstride=stride)
-            fig.colorbar(surf, shrink=0.5, aspect=5)
+            # 2. CREATE THE COLORBAR BOX GLUED TO THE RIGHT EDGE
+            # [x_start, y_start, width, height]
+            # x_start = 0.90 means it sits at the 90% mark of the window width
+            # width = 0.02 makes it nice and thin
+            cax = fig.add_axes([0.90, 0.25, 0.02, 0.5])
+            fig.colorbar(surf, cax=cax)
 
         elif plot_type == 'wireframe':
             # Wireframe is great for seeing "inside" the data
@@ -359,9 +365,9 @@ class ExploreData(PlotSVD):
 
         ax.set_xlabel(f'Time ({self._units["time_unit"]})')
         ax.set_ylabel(xlabel)
-        ax.set_zlabel('$\Delta$A')
+        ax.set_zlabel(r'$\Delta$A')
         ax.set_zlim(np.min(z), np.max(z))
-
+        ax.set_box_aspect((1.5, 1.5, 0.75), zoom=0.85)
         # Set initial camera angle
         ax.view_init(elev=elev, azim=azim)
 
@@ -555,7 +561,7 @@ class ExploreData(PlotSVD):
         # FiguresFormating.format_figure(ax, data, wavelength,
         #                                size=size, x_tight=True,
         #                                set_ylim=False)
-        FiguresFormating.axis_labels(ax, self._get_wave_label(), '$\Delta$A')
+        FiguresFormating.axis_labels(ax, self._get_wave_label(), r'$\Delta$A')
         if cover_range is not None:
             FiguresFormating.cover_excitation(ax, cover_range, self.wavelength)
 
