@@ -66,31 +66,6 @@
         <string>Adatfelfedező</string>
        </attribute>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="1" column="1">
-         <widget class="QComboBox" name="cbViewMode">
-          <property name="maximumSize">
-           <size>
-            <width>200</width>
-            <height>16777215</height>
-           </size>
-          </property>
-          <item>
-           <property name="text">
-            <string>3D nézet</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Spektrum</string>
-           </property>
-          </item>
-          <item>
-           <property name="text">
-            <string>Trace</string>
-           </property>
-          </item>
-         </widget>
-        </item>
         <item row="1" column="0">
          <widget class="QLabel" name="lblViewMode">
           <property name="sizePolicy">
@@ -114,12 +89,40 @@
           </property>
          </widget>
         </item>
+        <item row="1" column="1">
+         <widget class="QComboBox" name="cbViewMode">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>200</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <item>
+           <property name="text">
+            <string>3D nézet</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Spektrum</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>Trace</string>
+           </property>
+          </item>
+         </widget>
+        </item>
         <item row="3" column="0" colspan="3">
          <widget class="QStackedWidget" name="stackedViewModeOptions">
           <property name="maximumSize">
            <size>
             <width>16777215</width>
-            <height>51</height>
+            <height>31</height>
            </size>
           </property>
           <property name="currentIndex">
@@ -127,6 +130,18 @@
           </property>
           <widget class="QWidget" name="page3DOptions">
            <layout class="QHBoxLayout" name="horizontalLayout_2">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QLabel" name="lblColorMaps3D">
               <property name="sizePolicy">
@@ -142,6 +157,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="cbColormaps3D">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -202,6 +220,9 @@
             </item>
             <item>
              <widget class="QComboBox" name="cbStyle3D">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -252,6 +273,9 @@
             </item>
             <item>
              <widget class="QSpinBox" name="sbRenderQuality3D">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -293,6 +317,9 @@
             </item>
             <item>
              <widget class="QToolButton" name="btnResetView3D">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="minimumSize">
                <size>
                 <width>28</width>
@@ -406,6 +433,9 @@
                  </item>
                  <item row="2" column="1">
                   <widget class="QSpinBox" name="sbNumberOfSpectra">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -422,6 +452,9 @@
                  </item>
                  <item row="3" column="0">
                   <widget class="QCheckBox" name="chkAtWavelengthSpectra">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="sizePolicy">
                     <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                      <horstretch>0</horstretch>
@@ -435,17 +468,23 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Hullámhossz távolság</string>
+                    <string>Specifikus hullámhossz</string>
                    </property>
                   </widget>
                  </item>
                  <item row="3" column="1">
                   <widget class="QDoubleSpinBox" name="dsbAtWavelengthSpectra">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
                      <height>26</height>
                     </size>
+                   </property>
+                   <property name="maximum">
+                    <double>10000.000000000000000</double>
                    </property>
                   </widget>
                  </item>
@@ -463,7 +502,10 @@
                   </widget>
                  </item>
                  <item row="5" column="0" colspan="2">
-                  <widget class="QLineEdit" name="leCustomTimes">
+                  <widget class="QLineEdit" name="leCustomTimesSpectral">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
                    <property name="minimumSize">
                     <size>
                      <width>0</width>
@@ -516,6 +558,12 @@
                    </property>
                    <item>
                     <widget class="QLabel" name="lblTimeRangeStartSpectra">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
@@ -529,6 +577,9 @@
                    </item>
                    <item>
                     <widget class="QDoubleSpinBox" name="dsbTimeRangeStartSpectra">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                        <horstretch>0</horstretch>
@@ -541,12 +592,18 @@
                        <height>26</height>
                       </size>
                      </property>
+                     <property name="minimum">
+                      <double>-10.000000000000000</double>
+                     </property>
+                     <property name="maximum">
+                      <double>100000.000000000000000</double>
+                     </property>
                     </widget>
                    </item>
                    <item>
                     <widget class="QLabel" name="lblTimeRangeStopSpectra">
                      <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                        <horstretch>0</horstretch>
                        <verstretch>0</verstretch>
                       </sizepolicy>
@@ -564,6 +621,9 @@
                    </item>
                    <item>
                     <widget class="QDoubleSpinBox" name="dsbTimeRangeStopSpectra">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                        <horstretch>0</horstretch>
@@ -575,6 +635,12 @@
                        <width>0</width>
                        <height>26</height>
                       </size>
+                     </property>
+                     <property name="minimum">
+                      <double>-10.000000000000000</double>
+                     </property>
+                     <property name="maximum">
+                      <double>100000.000000000000000</double>
                      </property>
                     </widget>
                    </item>
@@ -601,7 +667,7 @@
                    <item>
                     <widget class="QLabel" name="lblAverageSpectra">
                      <property name="sizePolicy">
-                      <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                        <horstretch>0</horstretch>
                        <verstretch>0</verstretch>
                       </sizepolicy>
@@ -619,6 +685,12 @@
                    </item>
                    <item>
                     <widget class="QSpinBox" name="sbAverageSpectra">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
@@ -649,6 +721,12 @@
                    </property>
                    <item>
                     <widget class="QLabel" name="lblMaskRangeStartSpectra">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
                      <property name="minimumSize">
                       <size>
                        <width>0</width>
@@ -662,6 +740,9 @@
                    </item>
                    <item>
                     <widget class="QDoubleSpinBox" name="dsbMaskRangeStartSpectra">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                        <horstretch>0</horstretch>
@@ -674,12 +755,15 @@
                        <height>26</height>
                       </size>
                      </property>
+                     <property name="maximum">
+                      <double>10000.000000000000000</double>
+                     </property>
                     </widget>
                    </item>
                    <item>
                     <widget class="QLabel" name="lblMaskRangeStopSpectra">
                      <property name="sizePolicy">
-                      <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+                      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
                        <horstretch>0</horstretch>
                        <verstretch>0</verstretch>
                       </sizepolicy>
@@ -697,6 +781,9 @@
                    </item>
                    <item>
                     <widget class="QDoubleSpinBox" name="dsbMaskRangeStopSpectra">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
                      <property name="sizePolicy">
                       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                        <horstretch>0</horstretch>
@@ -708,6 +795,9 @@
                        <width>0</width>
                        <height>26</height>
                       </size>
+                     </property>
+                     <property name="maximum">
+                      <double>10000.000000000000000</double>
                      </property>
                     </widget>
                    </item>
@@ -868,7 +958,7 @@
                    </item>
                    <item>
                     <property name="text">
-                     <string>Seaborn világos</string>
+                     <string>Sötét háttér</string>
                     </property>
                    </item>
                    <item>
@@ -885,7 +975,329 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="pageTracesOptions"/>
+          <widget class="QWidget" name="pageTracesOptions">
+           <layout class="QHBoxLayout" name="horizontalLayout_8">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QGroupBox" name="grpWavelengthSelectionTrace">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>149</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>149</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>Hullámhossz Szelekció</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_5">
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>9</number>
+               </property>
+               <item>
+                <widget class="QRadioButton" name="rbAllTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Összes hullám</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="rbAutomaticTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Automatikus</string>
+                 </property>
+                 <property name="checked">
+                  <bool>false</bool>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QRadioButton" name="rbCustomTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Egyéni</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLineEdit" name="leCustomWavelengthTrace">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="placeholderText">
+                  <string>450, 500, 620</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="grpStyleTrace">
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>149</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>149</height>
+               </size>
+              </property>
+              <property name="title">
+               <string>Kinézet</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_6">
+               <property name="leftMargin">
+                <number>9</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>9</number>
+               </property>
+               <item>
+                <widget class="QLabel" name="lblLegendTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Jelmagyarázat</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cbLegendTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>Automatikus</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Mindig látható</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Elrejtve</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+               <item>
+                <widget class="QLabel" name="lblStyleTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>111</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="text">
+                  <string>Megjelenítési stílus</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QComboBox" name="cbStyleTrace">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="minimumSize">
+                  <size>
+                   <width>0</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <property name="maximumSize">
+                  <size>
+                   <width>16777215</width>
+                   <height>26</height>
+                  </size>
+                 </property>
+                 <item>
+                  <property name="text">
+                   <string>Ultrapyfit világos</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Ultrapyfit sötét</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Alapértelmezett</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Seaborn világos rács</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Seaborn sötét rács</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Sötét háttér</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>ggplot</string>
+                  </property>
+                 </item>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>
@@ -1104,5 +1516,150 @@
   </customwidget>
  </customwidgets>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>rbAutomaticSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sbNumberOfSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>313</x>
+     <y>648</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>457</x>
+     <y>673</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbAutomaticSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>chkAtWavelengthSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>329</x>
+     <y>650</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>329</x>
+     <y>701</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkAtWavelengthSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dsbAtWavelengthSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>366</x>
+     <y>696</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>464</x>
+     <y>704</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbCustomSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>leCustomTimesSpectral</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>365</x>
+     <y>738</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>307</x>
+     <y>764</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkTimeRangeSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dsbTimeRangeStartSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>688</x>
+     <y>615</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>680</x>
+     <y>648</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkTimeRangeSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dsbTimeRangeStopSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>761</x>
+     <y>620</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>767</x>
+     <y>646</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkMaskRangeSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dsbMaskRangeStartSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>648</x>
+     <y>739</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>648</x>
+     <y>761</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>chkMaskRangeSpectra</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>dsbMaskRangeStopSpectra</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>769</x>
+     <y>740</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>770</x>
+     <y>761</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>rbCustomTrace</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>leCustomWavelengthTrace</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>286</x>
+     <y>709</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>355</x>
+     <y>709</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

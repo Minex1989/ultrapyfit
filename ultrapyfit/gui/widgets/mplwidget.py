@@ -9,7 +9,6 @@ class MplWidget(QWidget):
         super().__init__(parent)
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
-
         # Start with a blank placeholder
         self.canvas = None
         self._create_placeholder()
@@ -18,7 +17,13 @@ class MplWidget(QWidget):
         """Creates an empty starting canvas."""
         fig = Figure(figsize=(6, 5), dpi=100)
         ax = fig.add_subplot(111)
-        ax.text(0.5, 0.5, "No Data Loaded", ha='center', va='center')
+        ax.axis('off')
+
+        # Place text right in the middle
+        ax.text(0.5, 0.5, "No Experiment Loaded.\nPlease select an experiment from the Project Explorer.",
+                horizontalalignment='center',
+                verticalalignment='center',
+                fontsize=12, color='gray')
         self.update_figure(fig)
 
     def update_figure(self, new_fig):
@@ -34,9 +39,7 @@ class MplWidget(QWidget):
 
         # 2. Wrap the library's Figure in a Qt Canvas
         self.canvas = FigureCanvas(new_fig)
-
         # 3. Insert it into the GUI layout
         self.layout.addWidget(self.canvas)
-
         # 4. Force a redraw
         self.canvas.draw()

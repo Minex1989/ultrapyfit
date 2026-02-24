@@ -167,14 +167,16 @@ class ExploreData(PlotSVD):
         fig, ax = plt.subplots(1)
         alpha = 0.60
         for i in range(len(values)):
-            ax.plot(self.x, data[:, i], marker='o', alpha=alpha, ms=4, ls='')
+            ax.plot(self.x, data[:, values[i]], marker='o', alpha=alpha, ms=4, ls='')
         if legend == 'auto':
             if len(values) <= 10 or traces == 'auto':
                 legenda = self._traces_legend(traces, values)
-                ax.legend(legenda, loc='best', ncol=2)
+                leg = ax.legend(legenda, loc='upper left', bbox_to_anchor=(1.02, 1.0), ncol=1)
+                leg.set_zorder(np.inf)
         elif legend:
             legenda = self._traces_legend(traces, values)
-            ax.legend(legenda, loc='best', ncol=2)
+            leg = ax.legend(legenda, loc='upper left', bbox_to_anchor=(1.02, 1.0), ncol=1)
+            leg.set_zorder(np.inf)
         FiguresFormating.axis_labels(ax, f'Time ({self._units["time_unit"]})',
                                      r'$\Delta$A')
         return fig, ax
@@ -279,25 +281,21 @@ class ExploreData(PlotSVD):
         """
         data = self.data
         wavelength = self._get_wavelength()
-        times, legend, average = self._verify_plot_spectra(times, data,
-                                                           legend, average)
-        times = self._time_to_real_times(times, rango, include_rango_max,
-                                         from_max_to_min)
-        legenda = [self._unit_formater.value_formated(i, legend_decimal)
-                   for i in times]
+        times, legend, average = self._verify_plot_spectra(times, data, legend, average)
+        times = self._time_to_real_times(times, rango, include_rango_max, from_max_to_min)
+        legenda = [self._unit_formater.value_formated(i, legend_decimal) for i in times]
         colors = self._get_color(times, cmap)
         fig, ax = plt.subplots(1)
         tiempo = pd.Series(self.x)
         for i in range(len(times)):
             index = (tiempo - times[i]).abs().sort_values().index[0]
             if average != 0:
-                trace = np.mean(data[index - average:index + average, :],
-                                axis=0)
+                trace = np.mean(data[index - average:index + average, :], axis=0)
             else:
                 trace = data[index, :]
             ax.plot(wavelength, trace, c=colors[i], label=legenda[i])
         self._format_spectra_figure(ax, cover_range)
-        self._legend_spectra_figure(legend, ncol, cmap, times)
+        self._legend_spectra_figure(ax, legend, ncol, cmap, times)
         return fig, ax
 
     @use_style
@@ -456,7 +454,10 @@ class ExploreData(PlotSVD):
                 val = 'cm$^{-1}$'
             else:
                 val = self.wavelength_unit
-            legenda = [f'{round(i)} {val}' for i in self.wavelength[values]]
+            if traces == 'select':
+                legenda = [f'{round(i)} {val}' for i in self.selected_wavelength[values]]
+            else:
+                legenda = [f'{round(i)} {val}' for i in self.wavelength[values]]
         else:
             legenda = [f'curve {i}' for i in range(self.data.shape[1])]
         return legenda
@@ -483,15 +484,15 @@ class ExploreData(PlotSVD):
                                                                 average))
         return fig, cursor
 
-    def _legend_spectra_figure(self, legend, ncol, cmap, times):
+    def _legend_spectra_figure(self, ax, legend, ncol, cmap, times):
         if legend == "bar":
             cnorm = Normalize(vmin=times[0], vmax=times[-1])
             cpickmap = plt.cm.ScalarMappable(norm=cnorm, cmap=cmap)
             cpickmap.set_array([])
-            plt.colorbar(cpickmap).set_label(
-                label='Time (' + self._units["time_unit"] + ')', size=15)
+            cbar = plt.colorbar(cpickmap, ax=ax)
+            cbar.set_label(label='Time (' + self._units["time_unit"] + ')', size=15)
         elif legend:
-            leg = plt.legend(loc='best', ncol=ncol)
+            leg = ax.legend(loc='upper left', bbox_to_anchor=(1.02, 1.0), ncol=ncol)
             leg.set_zorder(np.inf)
         else:
             pass
