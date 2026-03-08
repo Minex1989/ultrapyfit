@@ -264,49 +264,104 @@ class ExploreResults:
         return das
 
     @use_style
-    def plot_DAS(self, fit_number=1, wanted_das=None, normalize=False, style='lmu_spec'):
-        """Plots the Decay Associated Spectra (DAS) - Qt GUI Compatible."""
+    def plot_DAS(self, fit_number=None, number='all', plot_offset=True,
+                 precision=2, style='lmu_spec',
+                 cover_range=None,
+                 plot_integrated_DAS=False,
+                 convert_to_EAS=False):
+        """
+        Function that generates a figure with the decay associated spectra (DAS)
+         of the fit stored in the all_fit attributes
+
+        Parameters
+        ----------
+        fit_number: int or None (default None)
+            defines the fit number of the results all_fit dictionary. If None
+            the last fit in  will be considered.
+
+        number: list of inst or 'all' (default 'all')
+            Defines the DAS spectra wanted, if there is tau_inf include -1 in
+            the list (Note we start counting by '0', thus for tau1 '0' should be
+            pass):
+            e.g.: for a fit with three exponential, if the last two are wanted;
+                  number = [1, 2]
+            e.g.2: the last two exponential plus tau_inf; number = [1, 2, -1]
+
+        plot_offset: bool (default True)
+            If True the offset of a global fit without deconvolution will be
+            plot. (Only applicable for exponential or target fit without
+            deconvolution)
+
+        precision: int (default 2)
+            Defines the number of decimal places of the legend legend
+
+        style: style valid name (default 'lmu_spec')
+            defines the style to format the output figure, it can be any defined
+            matplotlib style, any ultrapyfit style (utf) or any user defined
+            style that follows matplotlib or utf styles and is saved in the
+            correct folder. Check styles for more information.
+
+        cover_range: List of length 2 or None (default None)
+            Defines a range in wavelength that will be cover in white. This can
+            be use to cut the excitation wavelength range
+
+        plot_integrated_DAS: bool (default False)
+            Defines in case if data has been derivative, to directly integrate
+            the DAS.
+
+        convert_to_EAS:
+            return the especies associted spectra, obtained as a linear
+            combination of the DAS and considering a sequential model.
+
+        Returns
+        ----------
+        Figure and axes matplotlib objects
+        """
         # verify type of fit is: either fit to Singular vectors or global fit to traces
-        if fit_number not in self._fits:
-            raise ExperimentException(f"Fit number {fit_number} not found.")
+        x, data, wavelength, params, exp_no, deconv, tau_inf, svd_fit, type_fit, derivative_space = \
+            self._get_values(fit_number=fit_number)
+        das = self.get_DAS(number=number, fit_number=fit_number,
+                           convert_to_EAS=convert_to_EAS)
 
-        fit_result = self._fits[fit_number]
-        exp_no = fit_result.exp_no
+        xlabel = self._get_wave_label_res(wavelength)
 
-        amplitudes = fit_result.amplitudes
-        wave = fit_result.wavelength
-        taus = [fit_result.params[f't{i + 1}'].value for i in range(exp_no)]
+        legenda = self._legend_plot_DAS(params, exp_no, deconv, tau_inf,
+                                        type_fit, precision)
 
-        if wanted_das is None:
-            wanted_das = list(range(exp_no))
-            if fit_result.tau_inf:
-                wanted_das.append(-1)
+        # check DAS that are selected and adapt the legend
+        if number != 'all':
+            wanted = self._wanted_DAS(exp_no, number, tau_inf)
+            # print a warning with elements not being plotted
+            select = [legenda[i] for i in wanted]
+            constants = ', '.join([i for i in legenda if i not in select])
+            msg = f'WARNING! the components: {constants}; ' \
+                  f'have been used to fit the data and are not been displayed'
+            print(msg)
+            legenda = [legenda[i] for i in wanted]
 
-        valid_indices = self._wanted_DAS(exp_no, wanted_das)
+        # integrate the DAS in case fit is done in derivate data
+        if derivative_space and plot_integrated_DAS:
+            das = np.array([integral.cumtrapz(das[i, :], wavelength, initial=0)
+                            for i in range(len(das))])
 
-        fig = plt.figure(figsize=(8, 6))
+        fig, ax = plt.subplots(1)
+        n_das = das.shape[0]
 
-        self._fig = fig
-        ax = fig.add_subplot(111)
-        cmap = self._get_cmap('tab10')  # Modern colormap
+        for i in range(n_das):
+            # if to decide if to plot the offset or not
 
-        for idx, i in enumerate(valid_indices):
-            amp_data = amplitudes[i, :]
-            if normalize:
-                # FIXED: Used standard python float() instead of np.float()
-                amp_data = amp_data / float(np.max(np.abs(amp_data)))
+            if i == n_das - 1 and not deconv and not plot_offset:
+                pass
+            else:
+                ax.plot(wavelength, das[i, :], label=legenda[i])
 
-            label = f"$\\tau_{idx + 1}$ = {self._unit_formater.format(taus[idx])}" if i != -1 else "$\\tau_{\\infty}$"
-            ax.plot(wave, amp_data, label=label, color=cmap(idx % 10), linewidth=2)
-
-        ax.set_xlabel(f"Wavelength ({self._units.get('wavelength_unit')})")
-        ax.set_ylabel("Amplitude (Norm)" if normalize else "Amplitude")
-        ax.set_title(f"Decay Associated Spectra (Fit {fit_number})")
-        ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5)
-        ax.legend()
-        ax.grid(True, linestyle='--', alpha=0.6)
-
-        fig.tight_layout()
+        plt.xlim(wavelength[0], wavelength[-1])
+        leg = ax.legend()
+        leg.set_zorder(np.inf)
+        # FiguresFormating.format_figure(ax, das, wavelength, x_tight=True, set_ylim=False)
+        FiguresFormating.axis_labels(ax, xlabel, r'$\Delta$A')
+        if cover_range is not None:
+            FiguresFormating.cover_excitation(ax, cover_range, wavelength)
         return fig, ax
 
     def das_to_eas(self, das, params, wavelength, n_exp, tau_inf, deconv):

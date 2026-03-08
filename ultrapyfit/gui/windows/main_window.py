@@ -1,3 +1,5 @@
+import io
+
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QRegularExpression, QObject, Signal
 from PySide6.QtGui import QRegularExpressionValidator
@@ -35,18 +37,21 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.setupUi(self)
         self._setup_connections()
         self._is_fitting = False
-
+        self._set_workspace_mode(False)
         regex_list = QRegularExpression(r"^[0-9\.\s,]+$")
         validator_list = QRegularExpressionValidator(regex_list)
         self.leGlobalFitTraces.setValidator(validator_list)
         self.leInitialTau.setValidator(validator_list)
         self.leCustomTimesSpectral.setValidator(validator_list)
         self.leCustomWavelengthTrace.setValidator(validator_list)
+        self.leGlobalKineticsSel.setValidator(validator_list)
         regex_mask = QRegularExpression(r"[0-9\.\s\-,]+")
         validator = QRegularExpressionValidator(regex_mask)
         self.leGlobalFitMasking.setValidator(validator)
         self.stdout_redirector = EmittingStream()
         self.stdout_redirector.text_written.connect(self.append_fit_log)
+        self.treeExperiment.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.treeExperiment.customContextMenuRequested.connect(self.show_tree_context_menu)
 
         self.viewStyleDict3D = {"Felület": "surface",
                                 "Vázlat": "wireframe",
@@ -73,7 +78,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def _setup_connections(self):
         self.actImport.triggered.connect(self.open_import_dialog)
-        self.treeExperiment.itemClicked.connect(self.on_tree_click)
+        self.treeExperiment.currentItemChanged.connect(self.on_tree_selection_changed)
         self.tabMain.currentChanged.connect(self.on_tab_changed)
         self.cbViewMode.currentIndexChanged.connect(self.on_view_mode_changed)
         self.btnExportPlot.clicked.connect(self.export_plot)
@@ -146,28 +151,42 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for signal in update_fitting_preview_plot_trigger:
             signal.connect(self.plot_current_data_fit_preview)
 
-    def _enable_controls(self):
-        self.cbViewMode.setEnabled(True)
-        self.cbColormaps3D.setEnabled(True)
-        self.cbStyle3D.setEnabled(True)
-        self.sbRenderQuality3D.setEnabled(True)
-        self.btnResetView3D.setEnabled(True)
-        self.btnExportPlot.setEnabled(True)
-        self.sbSvdCalcComps.setEnabled(True)
-        self.sbSvdShowComps.setEnabled(True)
-        self.sldSvdShowComps.setEnabled(True)
-        self.chkSvdLogScale.setEnabled(True)
-        self.cbFittingType.setEnabled(True)
-        self.rbGlobalFitSvd.setEnabled(True)
-        self.rbGlobalFitRegion.setEnabled(True)
-        self.rbGlobalFitTraces.setEnabled(True)
-        self.sbGlobalFitSvdComps.setEnabled(True)
-        self.sbExpNo.setEnabled(True)
-        self.dsbIRFw.setEnabled(True)
-        self.dsbIRFmu.setEnabled(True)
-        self.leInitialTau.setEnabled(True)
-        self.chkTauInf.setEnabled(True)
-        self.btnRunFit.setEnabled(True)
+        self.cbGlobalViewMode.currentIndexChanged.connect(self._route_stacked_settings)
+        update_global_fit_plot_trigger = [
+            self.cbGlobalViewMode.currentIndexChanged,
+            self.chkConvertToEAS.toggled,
+            self.leGlobalKineticsSel.editingFinished,
+        ]
+        for signal in update_global_fit_plot_trigger:
+            signal.connect(self.plot_current_data_global_fit)
+        self.chkSingleDetails.stateChanged.connect(self.plot_current_data_single_fit)
+
+    def _enable_controls(self, state: bool = True):
+        """
+        Enables or disables the main UI controls based on the boolean state.
+        Defaults to True.
+        """
+        self.cbViewMode.setEnabled(state)
+        self.cbColormaps3D.setEnabled(state)
+        self.cbStyle3D.setEnabled(state)
+        self.sbRenderQuality3D.setEnabled(state)
+        self.btnResetView3D.setEnabled(state)
+        self.btnExportPlot.setEnabled(state)
+        self.sbSvdCalcComps.setEnabled(state)
+        self.sbSvdShowComps.setEnabled(state)
+        self.sldSvdShowComps.setEnabled(state)
+        self.chkSvdLogScale.setEnabled(state)
+        self.cbFittingType.setEnabled(state)
+        self.rbGlobalFitSvd.setEnabled(state)
+        self.rbGlobalFitRegion.setEnabled(state)
+        self.rbGlobalFitTraces.setEnabled(state)
+        self.sbGlobalFitSvdComps.setEnabled(state)
+        self.sbExpNo.setEnabled(state)
+        self.dsbIRFw.setEnabled(state)
+        self.dsbIRFmu.setEnabled(state)
+        self.leInitialTau.setEnabled(state)
+        self.chkTauInf.setEnabled(state)
+        self.btnRunFit.setEnabled(state)
 
     def append_fit_log(self, text):
         """Appends intercepted console print statements to the GUI."""
@@ -194,7 +213,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if self.import_dialog.isVisible():
             self.import_dialog.close()
 
-    def add_experiment(self, experiment_obj: Experiment):
+    def add_experiment(self, experiment: Experiment):
         """Called when Import Window finishes."""
 
         # 1. Generate a unique ID for this new experiment
@@ -202,11 +221,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         exp_id = str(uuid.uuid4())
 
         # 2. Store the OBJECT in your dictionary
-        self.experiments[exp_id] = experiment_obj
+        self.experiments[exp_id] = experiment
 
         # 3. Create the Root Item for the Tree
         root_item = QtWidgets.QTreeWidgetItem(self.treeExperiment)
-        root_item.setText(0, experiment_obj._data_path.split("/")[-1])
+        root_item.setText(0, experiment._data_path.split("/")[-1])
         root_item.setExpanded(True)
 
         # 4. Store ONLY THE ID in the GUI Item
@@ -214,55 +233,219 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         root_item.setData(0, Qt.UserRole, exp_id)
 
         # 4. Select the new item
-        self.treeExperiment.setCurrentItem(root_item)
         self.dataset_settings[exp_id] = {}
         self._load_dataset_settings()
+        self.treeExperiment.setCurrentItem(root_item)
         self.plot_current_data_3D()
-        self._enable_controls()
+        self._enable_controls(True)
         self.stackedViewModeOptions.setCurrentIndex(0)
         self.cbViewMode.setCurrentIndex(0)
 
-    def on_tree_click(self, item):
+    def on_tree_selection_changed(self, current_item, previous_item):
         """
         Retrieves the experiment object from the dictionary based on the clicked item.
         """
-        # 1. Determine if we clicked a Root or a Child
-        parent = item.parent()
+        # Safety check: If the tree is cleared or nothing is selected
+        if not current_item:
+            return
+
+        parent = current_item.parent()
 
         if parent is None:
             # We clicked the Root (The Experiment Name)
-            exp_id = item.data(0, Qt.UserRole)
+            exp_id = current_item.data(0, Qt.UserRole)
             target_experiment = self.experiments.get(exp_id)
 
             if target_experiment:
-                print(f"Selected Experiment: {target_experiment.describe_data()}")
+                self._set_workspace_mode(show_results=False)
                 self._load_dataset_settings()
-                if self.cbViewMode.currentIndex() == 0:
-                    self.plot_current_data_3D()
-                elif self.cbViewMode.currentIndex() == 1:
-                    self.plot_current_data_spectrum()
-                elif self.cbViewMode.currentIndex() == 2:
-                    self.plot_current_data_traces()
+                # if self.cbViewMode.currentIndex() == 0:
+                #     self.plot_current_data_3D()
+                # elif self.cbViewMode.currentIndex() == 1:
+                #     self.plot_current_data_spectrum()
+                # elif self.cbViewMode.currentIndex() == 2:
+                #     self.plot_current_data_traces()
         else:
-            # We clicked a Child (Raw Data, SVD, etc.)
+            # We clicked a Child (Single/Global fit)
             # We must get the ID from the PARENT
-            exp_id = parent.data(0, Qt.UserRole)
-            target_experiment = self.experiments.get(exp_id)
-            node_type = item.text(0)
+            node_data = current_item.data(0, Qt.UserRole)
+            if isinstance(node_data, dict) and node_data.get('type') == 'fit_result':
+                # Force the UI to show the Results Tab!
+                self._set_workspace_mode(show_results=True)
+                self.tabMain.setCurrentWidget(self.pageResults)
+                fit_category = node_data.get('fit_category')
 
-            if target_experiment:
-                if node_type == "Raw Data":
-                    # self.plot_raw(target_experiment)
-                    pass
-                elif node_type == "SVD Analysis":
-                    # self.plot_svd(target_experiment)
-                    pass
+                # Route to the correct internal stacked page and plot
+                if fit_category == 'global':
+                    self.stackedResultsMain.setCurrentWidget(self.pageGlobalFit)
+                    self.plot_current_data_global_fit()
 
-    def get_experiment(self) -> Experiment:
+                elif fit_category == 'single':
+                    self.stackedResultsMain.setCurrentWidget(self.pageSingleFit)
+                    self.plot_current_data_single_fit()
+
+    def show_tree_context_menu(self, position):
+        item = self.treeExperiment.itemAt(position)
+        if not item:
+            return
+
+        # Grab the data using your single, unified UserRole
+        node_data = item.data(0, Qt.UserRole)
+        if node_data is None:
+            return
+
+        menu = QtWidgets.QMenu(self)
+        action_delete_fit = None
+        action_close_exp = None
+
+        # 1. Is it a Fit? (We know fits are dictionaries!)
+        if isinstance(node_data, dict) and node_data.get('type') == 'fit_result':
+            action_delete_fit = menu.addAction("Illesztés törlése (Memória felszabadítása)")
+
+        # 2. Is it an Experiment? (If it's not a dict, it must be your exp_id)
+        else:
+            action_close_exp = menu.addAction("Kísérlet bezárása (Összes adat törlése)")
+
+        # Show the menu
+        global_pos = self.treeExperiment.viewport().mapToGlobal(position)
+        selected_action = menu.exec(global_pos)
+
+        # Execute the correct deletion
+        if selected_action == action_delete_fit:
+            self.delete_fit_node(item, node_data)
+        elif selected_action == action_close_exp:
+            self.close_experiment_node(item)
+
+    def delete_fit_node(self, item, node_data):
+        """Safely removes a fit from both the UI and the backend RAM."""
+        # 1. Ask for confirmation
+        experiment = self.get_experiment()
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            'Törlés megerősítése',
+            'Biztosan törölni szeretné ezt az illesztést?\nEz a művelet nem vonható vissza.',
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
+        )
+
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            fit_category = node_data.get('fit_category')
+            fit_number = node_data.get('fit_number')
+
+            # 2. Delete from Backend RAM (the dictionary we found earlier)
+            try:
+                if fit_category == 'global':
+                    del experiment.fitting.fit_records.global_fits[fit_number]
+                elif fit_category == 'single':
+                    del experiment.fitting.fit_records.single_fits[fit_number]
+                print(f"Illesztés {fit_number} ({fit_category}) törölve a memóriából.")
+            except KeyError:
+                print(f"Figyelmeztetés: Az illesztés már nem található a memóriában.")
+
+            # 3. Remove from UI Tree
+            parent = item.parent()
+            if parent:
+                parent.removeChild(item)
+
+            # Optional UX: If you have an empty state for your Results Tab, trigger it here
+            # so the user isn't staring at a plot of a deleted fit.
+
+    def close_experiment_node(self, item):
+        """Safely removes an entire experiment and all its settings/fits from the app."""
+        reply = QtWidgets.QMessageBox.question(
+            self,
+            'Kísérlet bezárása',
+            'Biztosan be szeretné zárni ezt a kísérletet?\nEz törli a memóriából a teljes adatkészletet és az összes hozzá tartozó illesztést.',
+            QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
+            QtWidgets.QMessageBox.StandardButton.No
+        )
+
+        if reply == QtWidgets.QMessageBox.StandardButton.Yes:
+            # 1. Grab the UUID from the clicked item
+            exp_id = item.data(0, Qt.UserRole)
+
+            # 2. Remove from the UI Tree
+            root = self.treeExperiment.invisibleRootItem()
+            root.removeChild(item)
+
+            # 3. Nuke the data from your tracking dictionaries
+            if exp_id in self.experiments:
+                del self.experiments[exp_id]
+            if exp_id in self.dataset_settings:
+                del self.dataset_settings[exp_id]
+
+            # ---------------------------------------------------------
+            # 4. THE SMART UI ROUTER
+            # ---------------------------------------------------------
+            if self.treeExperiment.topLevelItemCount() > 0:
+                # There are other experiments! Select the first one available.
+                next_item = self.treeExperiment.topLevelItem(0)
+                self.treeExperiment.setCurrentItem(next_item)
+
+            else:
+                empty_msg = "Nincs betöltött kísérlet.\nKérjük, válasszon egyet a Projekt Felfedezőből."
+
+                # Clear every single canvas in your app!
+                # (Update these names to match your actual Qt Designer object names)
+                if hasattr(self, 'mplWidget'):
+                    self._clear_plot_with_message(self.mplWidget, empty_msg)
+
+                if hasattr(self, 'svdMplWidget'):
+                    self._clear_plot_with_message(self.svdMplWidget, empty_msg)
+
+                if hasattr(self, 'fittingPreviewMplWidget'):
+                    self._clear_plot_with_message(self.fittingPreviewMplWidget, empty_msg)
+
+                # And for the future Eredmények tab:
+                # if hasattr(self, 'mplWidgetResultsDAS'):
+                #     self._clear_plot_with_message(self.mplWidgetResultsDAS, empty_msg)
+
+                # If you have a function to gray out your toolbars/spinboxes, call it here:
+                self._enable_controls(False)
+
+            self.statusBar().showMessage("Kísérlet sikeresen bezárva és memória felszabadítva.", 5000)
+
+    def get_experiment(self) -> Experiment:  # Make sure to import Experiment for the type hint
+        """Returns the Experiment object for the currently selected tree item."""
         item = self.treeExperiment.currentItem()
-        exp_id = item.data(0, Qt.UserRole)
+        if item is None:
+            return None
+
+        # Traverse up to find the root node
+        parent_item = item
+        while parent_item.parent() is not None:
+            parent_item = parent_item.parent()
+
+        # THE FIX: Extract the UUID from the root node (parent_item)
+        exp_id = parent_item.data(0, Qt.UserRole)
+
+        # Retrieve and return the actual object from the dictionary
         experiment = self.experiments.get(exp_id)
         return experiment
+
+    def _set_workspace_mode(self, show_results: bool):
+        """
+        Toggles the visibility of the main tabs.
+        If show_results is True, it isolates the Results tab.
+        If False, it restores the standard Data/SVD/Fitting workspace.
+        """
+        # 1. Safely grab the index of every tab
+        idx_data = self.tabMain.indexOf(self.pageDataExplorer)
+        idx_svd = self.tabMain.indexOf(self.pageSvd)
+        idx_fitting = self.tabMain.indexOf(self.pageFitting)
+        idx_results = self.tabMain.indexOf(self.pageResults)
+
+        # 2. Toggle standard workspace tabs (Hidden if showing results)
+        if idx_data != -1:
+            self.tabMain.setTabVisible(idx_data, not show_results)
+        if idx_svd != -1:
+            self.tabMain.setTabVisible(idx_svd, not show_results)
+        if idx_fitting != -1:
+            self.tabMain.setTabVisible(idx_fitting, not show_results)
+
+        # 3. Toggle the Results tab (Visible ONLY if showing results)
+        if idx_results != -1:
+            self.tabMain.setTabVisible(idx_results, show_results)
 
     def on_tab_changed(self, index):
         """
@@ -806,11 +989,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.statusBar().showMessage("Illesztés sikeresen befejeződött!", 5000)
             self._save_current_dataset_settings()
             self._add_fit_to_tree()
-            QtWidgets.QMessageBox.information(
-                self,
-                "Sikeres Illesztés",
-                "Az illesztés sikeresen lefutott! Az eredmények megtekinthetők az Eredmények fülön."
-            )
         except Exception as e:
             # ---------------------------------------------------------
             # 6. POST-FIT FAILURE
@@ -927,6 +1105,113 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         else:
             self.abort_fitting()
 
+    def plot_current_data_global_fit(self):
+        """Extracts the math from the selected Global Fit and draws the plots/report."""
+        current_item = self.treeExperiment.currentItem()
+        if not current_item:
+            return
+
+        node_data = current_item.data(0, Qt.UserRole)
+        experiment = self.get_experiment()
+
+        if not experiment or not isinstance(node_data, dict):
+            return
+
+        fit_number = node_data.get('fit_number')
+        view_mode = self.cbGlobalViewMode.currentIndex()
+
+        try:
+            if view_mode == 0:
+                # 1. Read the Normalize checkbox
+                do_eas = self.chkConvertToEAS.isChecked()
+
+                fig, ax = experiment.fitting.plot_DAS(
+                    fit_number=fit_number,
+                    convert_to_EAS=do_eas,
+                    plot_offset=True,  # Keeps the infinite offset if it exists
+                    number='all'
+                )
+
+            elif view_mode in [1, 2]:
+                # 2. Parse the Wavelength Selection LineEdit
+                selection_text = self.leGlobalKineticsSel.text().strip()
+                trace_selection = None
+
+                if selection_text:
+                    # This regex matches integers (400) and decimals (400.5), including negative signs if any
+                    matches = re.findall(r"[-+]?(?:\d*\.\d+|\d+)", selection_text)
+
+                    if matches:
+                        trace_selection = [float(x) for x in matches]
+                    else:
+                        self.statusBar().showMessage("Nem található érvényes szám a kiválasztásban!", 5000)
+                        trace_selection = None  # Fallback to showing everything
+
+                # Check if they wanted residues based on the combobox index
+                wants_residues = (view_mode == 2)
+
+                fig, ax = experiment.fitting.plot_global_fit(
+                    fit_number=fit_number,
+                    selection=trace_selection,
+                    plot_residues=wants_residues
+                )
+
+            # Update the canvas!
+            fig.tight_layout()
+            self.globalMplWidget.update_figure(fig)
+
+        except Exception as e:
+            self._clear_plot_with_message(self.globalMplWidget, f"Hiba a rajzolás során:\n{str(e)}")
+
+        # Keep the stdout hijacker to fill the QTextBrowser
+        self._update_fit_text_report(experiment, fit_number, self.textGlobalReport)
+
+    def plot_current_data_single_fit(self):
+        """Extracts the math from the selected Single Fit and draws the plot."""
+        current_item = self.treeExperiment.currentItem()
+        if not current_item:
+            return
+
+        node_data = current_item.data(0, Qt.UserRole)
+        experiment = self.get_experiment()
+
+        if not experiment or not isinstance(node_data, dict):
+            return
+
+        fit_number = node_data.get('fit_number')
+
+        # Read the checkbox from your UI (ensure the name matches Qt Designer)
+        show_details = self.chkSingleDetails.isChecked()
+
+        try:
+            # Call the backend single fit plotter
+            fig, ax = experiment.fitting.plot_single_fit(fit_number=fit_number, details=show_details)
+
+            fig.tight_layout()
+            self.singleMplWidget.update_figure(fig)
+
+        except Exception as e:
+            self._clear_plot_with_message(self.singleMplWidget, f"Hiba a rajzolás során:\n{str(e)}")
+
+    def _update_fit_text_report(self, experiment, fit_number, text_browser):
+        """Hijacks stdout to capture the backend's print_fit_results text."""
+        captured_output = io.StringIO()
+        original_stdout = sys.stdout
+
+        try:
+            # Redirect console prints to our string buffer
+            sys.stdout = captured_output
+            experiment.fitting.print_fit_results(fit_number)
+        except Exception as e:
+            print(f"Hiba a jelentés generálásakor: {e}", file=original_stdout)
+        finally:
+            # ALWAYS restore standard output so we don't break PyCharm/VSCode console!
+            sys.stdout = original_stdout
+
+        # Extract the text and dump it into the UI
+        report_text = captured_output.getvalue()
+        text_browser.setText(report_text)
+
     def on_view_mode_changed(self):
         """
         Triggered whenever the user changes the view mode dropdown.
@@ -940,8 +1225,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         print(self.treeExperiment.currentItem())
         if self.treeExperiment.currentItem() is None:
             # If no data is loaded, just clear the plot and stop here.
-            self._clear_plot_with_message(
-                "No Experiment Loaded.\nPlease select an experiment from the Project Explorer.")
+            self._clear_plot_with_message(self.mplWidget, "Nincs betöltött kísérlet.\nKérjük, válasszon egyet a Projekt Felfedezőből.")
             return
 
         if index == 0:
@@ -962,12 +1246,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             self.stackedViewModeOptions.setMinimumHeight(151)
             self.plot_current_data_traces()
 
-    def _clear_plot_with_message(self, message):
+    def _clear_plot_with_message(self, widget, message):
         """
         Clears the current canvas and displays a text message.
         """
         # Access the figure inside your MplWidget
-        fig = self.mplWidget.canvas.figure
+        fig = widget.canvas.figure
         fig.clear()
 
         ax = fig.add_subplot(111)
@@ -1186,15 +1470,31 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         msg_box.setText(message)
         msg_box.exec()
 
+    def _route_stacked_settings(self, index):
+        """Maps Combobox indexes (0, 1, 2) to Stacked Widget pages (0, 1)."""
+        if index == 0:
+            self.stackedGlobalSettings.setCurrentIndex(0) # DAS Page
+        elif index in [1, 2]:
+            self.stackedGlobalSettings.setCurrentIndex(1) # Kinetics Page
+
     def _save_current_dataset_settings(self):
         """
         Scrapes the current state of all GUI widgets (checkboxes, spinboxes, etc.)
         and saves them into a dictionary keyed by the current filename.
         """
-        if self.treeExperiment.currentItem() is None:
+        item = self.treeExperiment.currentItem()
+        if item is None:
             return
-        exp_id = self.treeExperiment.currentItem().data(0, Qt.UserRole)
-
+        # Traverse up to find the root node
+        parent_item = item
+        while parent_item.parent() is not None:
+            parent_item = parent_item.parent()
+        node_data = parent_item.data(0, Qt.UserRole)
+        if node_data is None:
+            return
+        if isinstance(node_data, dict):
+            return
+        exp_id = node_data
         if self.rbAllSpectra.isChecked():
             spec_mode = 'all'
         elif self.rbAutomaticSpectra.isChecked():
@@ -1292,9 +1592,19 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         Restores the GUI widgets to the saved state for this specific file.
         If no settings exist, it loads defaults.
         """
-        if self.treeExperiment.currentItem() is None:
+        item = self.treeExperiment.currentItem()
+        if item is None:
             return
-        exp_id = self.treeExperiment.currentItem().data(0, Qt.UserRole)
+        # Traverse up to find the root node
+        parent_item = item
+        while parent_item.parent() is not None:
+            parent_item = parent_item.parent()
+        node_data = parent_item.data(0, Qt.UserRole)
+        if node_data is None:
+            return
+        if isinstance(node_data, dict):
+            return
+        exp_id = node_data
         s = self.dataset_settings[exp_id]
         data = self.experiments[exp_id].data
         wavelength = self.experiments[exp_id].wavelength

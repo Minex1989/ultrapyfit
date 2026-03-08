@@ -20,7 +20,7 @@ class MplWidget(QWidget):
         ax.axis('off')
 
         # Place text right in the middle
-        ax.text(0.5, 0.5, "No Experiment Loaded.\nPlease select an experiment from the Project Explorer.",
+        ax.text(0.5, 0.5, "Nincs betöltött kísérlet.\nKérjük, válasszon egyet a Projekt Felfedezőből.",
                 horizontalalignment='center',
                 verticalalignment='center',
                 fontsize=12, color='gray')

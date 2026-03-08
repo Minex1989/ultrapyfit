@@ -21,10 +21,10 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDockWidget,
     QGroupBox, QHBoxLayout, QHeaderView, QLabel,
     QLayout, QLineEdit, QMainWindow, QMenu,
     QMenuBar, QPushButton, QRadioButton, QSizePolicy,
-    QSlider, QSpacerItem, QSpinBox, QStackedWidget,
-    QStatusBar, QTabWidget, QTextBrowser, QToolBox,
-    QToolButton, QTreeWidget, QTreeWidgetItem, QVBoxLayout,
-    QWidget)
+    QSlider, QSpacerItem, QSpinBox, QSplitter,
+    QStackedWidget, QStatusBar, QTabWidget, QTextBrowser,
+    QToolBox, QToolButton, QTreeWidget, QTreeWidgetItem,
+    QVBoxLayout, QWidget)
 
 from ultrapyfit.gui.widgets.mplwidget import MplWidget
 
@@ -50,9 +50,9 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.centralwidget.sizePolicy().hasHeightForWidth())
         self.centralwidget.setSizePolicy(sizePolicy)
-        self.horizontalLayout = QHBoxLayout(self.centralwidget)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_17 = QVBoxLayout(self.centralwidget)
+        self.verticalLayout_17.setObjectName(u"verticalLayout_17")
+        self.verticalLayout_17.setContentsMargins(0, 0, 0, 0)
         self.tabMain = QTabWidget(self.centralwidget)
         self.tabMain.setObjectName(u"tabMain")
         self.pageDataExplorer = QWidget()
@@ -1075,8 +1075,166 @@ class Ui_MainWindow(object):
         self.verticalLayout_9.addLayout(self.hBoxLayoutFittingSettings)
 
         self.tabMain.addTab(self.pageFitting, "")
+        self.pageResults = QWidget()
+        self.pageResults.setObjectName(u"pageResults")
+        self.verticalLayout_12 = QVBoxLayout(self.pageResults)
+        self.verticalLayout_12.setSpacing(0)
+        self.verticalLayout_12.setObjectName(u"verticalLayout_12")
+        self.verticalLayout_12.setContentsMargins(0, 0, 0, 0)
+        self.stackedResultsMain = QStackedWidget(self.pageResults)
+        self.stackedResultsMain.setObjectName(u"stackedResultsMain")
+        self.pageGlobalFit = QWidget()
+        self.pageGlobalFit.setObjectName(u"pageGlobalFit")
+        self.verticalLayout_18 = QVBoxLayout(self.pageGlobalFit)
+        self.verticalLayout_18.setObjectName(u"verticalLayout_18")
+        self.verticalLayout_18.setContentsMargins(0, 0, 0, 0)
+        self.grpGlobalViewMode = QGroupBox(self.pageGlobalFit)
+        self.grpGlobalViewMode.setObjectName(u"grpGlobalViewMode")
+        self.grpGlobalViewMode.setMinimumSize(QSize(0, 50))
+        self.grpGlobalViewMode.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_14 = QHBoxLayout(self.grpGlobalViewMode)
+        self.horizontalLayout_14.setObjectName(u"horizontalLayout_14")
+        self.lblGlobalViewMode = QLabel(self.grpGlobalViewMode)
+        self.lblGlobalViewMode.setObjectName(u"lblGlobalViewMode")
+        sizePolicy2.setHeightForWidth(self.lblGlobalViewMode.sizePolicy().hasHeightForWidth())
+        self.lblGlobalViewMode.setSizePolicy(sizePolicy2)
 
-        self.horizontalLayout.addWidget(self.tabMain)
+        self.horizontalLayout_14.addWidget(self.lblGlobalViewMode)
+
+        self.cbGlobalViewMode = QComboBox(self.grpGlobalViewMode)
+        self.cbGlobalViewMode.addItem("")
+        self.cbGlobalViewMode.addItem("")
+        self.cbGlobalViewMode.addItem("")
+        self.cbGlobalViewMode.setObjectName(u"cbGlobalViewMode")
+
+        self.horizontalLayout_14.addWidget(self.cbGlobalViewMode)
+
+
+        self.verticalLayout_18.addWidget(self.grpGlobalViewMode)
+
+        self.stackedGlobalSettings = QStackedWidget(self.pageGlobalFit)
+        self.stackedGlobalSettings.setObjectName(u"stackedGlobalSettings")
+        self.stackedGlobalSettings.setMinimumSize(QSize(0, 50))
+        self.stackedGlobalSettings.setMaximumSize(QSize(16777215, 50))
+        self.pageDasSettings = QWidget()
+        self.pageDasSettings.setObjectName(u"pageDasSettings")
+        self.verticalLayout_14 = QVBoxLayout(self.pageDasSettings)
+        self.verticalLayout_14.setSpacing(0)
+        self.verticalLayout_14.setObjectName(u"verticalLayout_14")
+        self.verticalLayout_14.setContentsMargins(0, 0, 0, 0)
+        self.grpDasSettings = QGroupBox(self.pageDasSettings)
+        self.grpDasSettings.setObjectName(u"grpDasSettings")
+        self.horizontalLayout_15 = QHBoxLayout(self.grpDasSettings)
+        self.horizontalLayout_15.setObjectName(u"horizontalLayout_15")
+        self.chkConvertToEAS = QCheckBox(self.grpDasSettings)
+        self.chkConvertToEAS.setObjectName(u"chkConvertToEAS")
+
+        self.horizontalLayout_15.addWidget(self.chkConvertToEAS)
+
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_15.addItem(self.horizontalSpacer_4)
+
+
+        self.verticalLayout_14.addWidget(self.grpDasSettings)
+
+        self.stackedGlobalSettings.addWidget(self.pageDasSettings)
+        self.pageGlobalFitPlotSettings = QWidget()
+        self.pageGlobalFitPlotSettings.setObjectName(u"pageGlobalFitPlotSettings")
+        self.verticalLayout_15 = QVBoxLayout(self.pageGlobalFitPlotSettings)
+        self.verticalLayout_15.setSpacing(0)
+        self.verticalLayout_15.setObjectName(u"verticalLayout_15")
+        self.verticalLayout_15.setContentsMargins(0, 0, 0, 0)
+        self.grpGlobalFitPlotSettings = QGroupBox(self.pageGlobalFitPlotSettings)
+        self.grpGlobalFitPlotSettings.setObjectName(u"grpGlobalFitPlotSettings")
+        self.grpGlobalFitPlotSettings.setMinimumSize(QSize(0, 50))
+        self.grpGlobalFitPlotSettings.setMaximumSize(QSize(16777215, 50))
+        self.horizontalLayout_16 = QHBoxLayout(self.grpGlobalFitPlotSettings)
+        self.horizontalLayout_16.setObjectName(u"horizontalLayout_16")
+        self.lblGlobalKineticsSel = QLabel(self.grpGlobalFitPlotSettings)
+        self.lblGlobalKineticsSel.setObjectName(u"lblGlobalKineticsSel")
+
+        self.horizontalLayout_16.addWidget(self.lblGlobalKineticsSel)
+
+        self.leGlobalKineticsSel = QLineEdit(self.grpGlobalFitPlotSettings)
+        self.leGlobalKineticsSel.setObjectName(u"leGlobalKineticsSel")
+
+        self.horizontalLayout_16.addWidget(self.leGlobalKineticsSel)
+
+        self.horizontalSpacer_3 = QSpacerItem(346, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_16.addItem(self.horizontalSpacer_3)
+
+
+        self.verticalLayout_15.addWidget(self.grpGlobalFitPlotSettings)
+
+        self.stackedGlobalSettings.addWidget(self.pageGlobalFitPlotSettings)
+
+        self.verticalLayout_18.addWidget(self.stackedGlobalSettings)
+
+        self.splitter = QSplitter(self.pageGlobalFit)
+        self.splitter.setObjectName(u"splitter")
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
+        self.globalMplWidget = MplWidget(self.splitter)
+        self.globalMplWidget.setObjectName(u"globalMplWidget")
+        sizePolicy.setHeightForWidth(self.globalMplWidget.sizePolicy().hasHeightForWidth())
+        self.globalMplWidget.setSizePolicy(sizePolicy)
+        self.splitter.addWidget(self.globalMplWidget)
+        self.grpGlobalReport = QGroupBox(self.splitter)
+        self.grpGlobalReport.setObjectName(u"grpGlobalReport")
+        self.verticalLayout_16 = QVBoxLayout(self.grpGlobalReport)
+        self.verticalLayout_16.setObjectName(u"verticalLayout_16")
+        self.verticalLayout_16.setContentsMargins(-1, 2, -1, -1)
+        self.textGlobalReport = QTextBrowser(self.grpGlobalReport)
+        self.textGlobalReport.setObjectName(u"textGlobalReport")
+
+        self.verticalLayout_16.addWidget(self.textGlobalReport)
+
+        self.splitter.addWidget(self.grpGlobalReport)
+
+        self.verticalLayout_18.addWidget(self.splitter)
+
+        self.stackedResultsMain.addWidget(self.pageGlobalFit)
+        self.pageSingleFit = QWidget()
+        self.pageSingleFit.setObjectName(u"pageSingleFit")
+        self.verticalLayout_19 = QVBoxLayout(self.pageSingleFit)
+        self.verticalLayout_19.setObjectName(u"verticalLayout_19")
+        self.verticalLayout_19.setContentsMargins(0, 0, 0, 0)
+        self.grpSingleFitSettings = QGroupBox(self.pageSingleFit)
+        self.grpSingleFitSettings.setObjectName(u"grpSingleFitSettings")
+        sizePolicy3.setHeightForWidth(self.grpSingleFitSettings.sizePolicy().hasHeightForWidth())
+        self.grpSingleFitSettings.setSizePolicy(sizePolicy3)
+        self.grpSingleFitSettings.setMinimumSize(QSize(0, 61))
+        self.grpSingleFitSettings.setMaximumSize(QSize(16777215, 61))
+        self.horizontalLayout = QHBoxLayout(self.grpSingleFitSettings)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(-1, 2, -1, -1)
+        self.chkSingleDetails = QCheckBox(self.grpSingleFitSettings)
+        self.chkSingleDetails.setObjectName(u"chkSingleDetails")
+
+        self.horizontalLayout.addWidget(self.chkSingleDetails)
+
+        self.horizontalSpacer_8 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_8)
+
+
+        self.verticalLayout_19.addWidget(self.grpSingleFitSettings)
+
+        self.singleMplWidget = MplWidget(self.pageSingleFit)
+        self.singleMplWidget.setObjectName(u"singleMplWidget")
+        sizePolicy.setHeightForWidth(self.singleMplWidget.sizePolicy().hasHeightForWidth())
+        self.singleMplWidget.setSizePolicy(sizePolicy)
+
+        self.verticalLayout_19.addWidget(self.singleMplWidget)
+
+        self.stackedResultsMain.addWidget(self.pageSingleFit)
+
+        self.verticalLayout_12.addWidget(self.stackedResultsMain)
+
+        self.tabMain.addTab(self.pageResults, "")
+
+        self.verticalLayout_17.addWidget(self.tabMain)
 
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
@@ -1143,6 +1301,56 @@ class Ui_MainWindow(object):
         self.pageMetadata = QWidget()
         self.pageMetadata.setObjectName(u"pageMetadata")
         self.pageMetadata.setGeometry(QRect(0, 0, 200, 680))
+        self.verticalLayout_13 = QVBoxLayout(self.pageMetadata)
+        self.verticalLayout_13.setObjectName(u"verticalLayout_13")
+        self.TimeMetricLabel = QLabel(self.pageMetadata)
+        self.TimeMetricLabel.setObjectName(u"TimeMetricLabel")
+        sizePolicy2.setHeightForWidth(self.TimeMetricLabel.sizePolicy().hasHeightForWidth())
+        self.TimeMetricLabel.setSizePolicy(sizePolicy2)
+        self.TimeMetricLabel.setMinimumSize(QSize(0, 0))
+        font2 = QFont()
+        font2.setPointSize(10)
+        font2.setBold(False)
+        font2.setKerning(True)
+        self.TimeMetricLabel.setFont(font2)
+
+        self.verticalLayout_13.addWidget(self.TimeMetricLabel)
+
+        self.cbTimeMetric = QComboBox(self.pageMetadata)
+        self.cbTimeMetric.addItem("")
+        self.cbTimeMetric.addItem("")
+        self.cbTimeMetric.addItem("")
+        self.cbTimeMetric.addItem("")
+        self.cbTimeMetric.addItem("")
+        self.cbTimeMetric.setObjectName(u"cbTimeMetric")
+        font3 = QFont()
+        font3.setPointSize(10)
+        font3.setBold(False)
+        self.cbTimeMetric.setFont(font3)
+
+        self.verticalLayout_13.addWidget(self.cbTimeMetric)
+
+        self.WavelengthMetricLabel = QLabel(self.pageMetadata)
+        self.WavelengthMetricLabel.setObjectName(u"WavelengthMetricLabel")
+        sizePolicy2.setHeightForWidth(self.WavelengthMetricLabel.sizePolicy().hasHeightForWidth())
+        self.WavelengthMetricLabel.setSizePolicy(sizePolicy2)
+        self.WavelengthMetricLabel.setFont(font3)
+
+        self.verticalLayout_13.addWidget(self.WavelengthMetricLabel)
+
+        self.cbWavelengthMetric = QComboBox(self.pageMetadata)
+        self.cbWavelengthMetric.addItem("")
+        self.cbWavelengthMetric.addItem("")
+        self.cbWavelengthMetric.addItem("")
+        self.cbWavelengthMetric.setObjectName(u"cbWavelengthMetric")
+        self.cbWavelengthMetric.setFont(font3)
+
+        self.verticalLayout_13.addWidget(self.cbWavelengthMetric)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_13.addItem(self.verticalSpacer)
+
         self.tbxProperties.addItem(self.pageMetadata, u"Metaadatok")
 
         self.verticalLayout_3.addWidget(self.tbxProperties)
@@ -1181,6 +1389,8 @@ class Ui_MainWindow(object):
         self.tabMain.setCurrentIndex(0)
         self.stackedViewModeOptions.setCurrentIndex(0)
         self.stackedFitDataSelection.setCurrentIndex(0)
+        self.stackedResultsMain.setCurrentIndex(0)
+        self.stackedGlobalSettings.setCurrentIndex(0)
         self.tbxProperties.setCurrentIndex(0)
 
 
@@ -1355,9 +1565,35 @@ class Ui_MainWindow(object):
         self.btnRunFit.setText(QCoreApplication.translate("MainWindow", u"Illeszt\u00e9s Futtat\u00e1sa", None))
         self.grpFittingProgress.setTitle(QCoreApplication.translate("MainWindow", u"Illeszt\u00e9s folyamata", None))
         self.tabMain.setTabText(self.tabMain.indexOf(self.pageFitting), QCoreApplication.translate("MainWindow", u"Illeszt\u00e9s be\u00e1ll\u00edt\u00e1sa", None))
+        self.grpGlobalViewMode.setTitle("")
+        self.lblGlobalViewMode.setText(QCoreApplication.translate("MainWindow", u"N\u00e9zet:", None))
+        self.cbGlobalViewMode.setItemText(0, QCoreApplication.translate("MainWindow", u"DAS / SAS Spektrumok", None))
+        self.cbGlobalViewMode.setItemText(1, QCoreApplication.translate("MainWindow", u"Kinetika (Illesztett Nyomok)", None))
+        self.cbGlobalViewMode.setItemText(2, QCoreApplication.translate("MainWindow", u"Kinetika + Rezidu\u00e1lisok", None))
+
+        self.grpDasSettings.setTitle("")
+        self.chkConvertToEAS.setText(QCoreApplication.translate("MainWindow", u"EAS (Szekvenci\u00e1lis) Spektrumok", None))
+        self.grpGlobalFitPlotSettings.setTitle("")
+        self.lblGlobalKineticsSel.setText(QCoreApplication.translate("MainWindow", u"Hull\u00e1mhosszak (nm):", None))
+        self.grpGlobalReport.setTitle(QCoreApplication.translate("MainWindow", u"Glob\u00e1lis Illeszt\u00e9s Eredm\u00e9nyei:", None))
+        self.grpSingleFitSettings.setTitle(QCoreApplication.translate("MainWindow", u"Egyedi Kinetikai Illeszt\u00e9s", None))
+        self.chkSingleDetails.setText(QCoreApplication.translate("MainWindow", u"Tau \u00e9rt\u00e9kek mutat\u00e1sa a grafikonon", None))
+        self.tabMain.setTabText(self.tabMain.indexOf(self.pageResults), QCoreApplication.translate("MainWindow", u"Eredm\u00e9nyek", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"F\u00e1jlok", None))
         self.dockExperiments.setWindowTitle(QCoreApplication.translate("MainWindow", u"K\u00eds\u00e9rletek", None))
         self.dockProperties.setWindowTitle(QCoreApplication.translate("MainWindow", u"Tuljadons\u00e1gok", None))
+        self.TimeMetricLabel.setText(QCoreApplication.translate("MainWindow", u"Id\u0151 m\u00e9rt\u00e9kegys\u00e9ge:", None))
+        self.cbTimeMetric.setItemText(0, QCoreApplication.translate("MainWindow", u"Nanosecond (ns)", None))
+        self.cbTimeMetric.setItemText(1, QCoreApplication.translate("MainWindow", u"Microsecond (\u03bcs)", None))
+        self.cbTimeMetric.setItemText(2, QCoreApplication.translate("MainWindow", u"Picosecond (ps)", None))
+        self.cbTimeMetric.setItemText(3, QCoreApplication.translate("MainWindow", u"Femtosecond (fs)", None))
+        self.cbTimeMetric.setItemText(4, QCoreApplication.translate("MainWindow", u"Attosecond (as)", None))
+
+        self.WavelengthMetricLabel.setText(QCoreApplication.translate("MainWindow", u"Hull\u00e1mhossz m\u00e9rt\u00e9kegys\u00e9ge:", None))
+        self.cbWavelengthMetric.setItemText(0, QCoreApplication.translate("MainWindow", u"Nanometer (nm)", None))
+        self.cbWavelengthMetric.setItemText(1, QCoreApplication.translate("MainWindow", u"Micrometer (\u00b5m)", None))
+        self.cbWavelengthMetric.setItemText(2, QCoreApplication.translate("MainWindow", u"Picometer (pm)", None))
+
         self.tbxProperties.setItemText(self.tbxProperties.indexOf(self.pageMetadata), QCoreApplication.translate("MainWindow", u"Metaadatok", None))
     # retranslateUi
 
