@@ -396,7 +396,6 @@ class GlobalFit(lmfit.Minimizer, Jacobian):
         self._number_it = 0
         self.fit_completed = True
         if self._stop_manually:
-            print('Fit stop manually')
             self._abort = False
             self._stop_manually = False
         if self.weights['apply']:
@@ -462,6 +461,12 @@ class GlobalFit(lmfit.Minimizer, Jacobian):
         If not print the number of iterations and the chi square every 200
         iterations.
         """
+        try:
+            from PySide6.QtWidgets import QApplication
+            QApplication.processEvents()  # The Heartbeat: Lets the GUI check for button clicks!
+        except ImportError:
+            pass
+
         get_stop = self._stop_manually
         if get_stop:
             return True
@@ -759,37 +764,37 @@ class GlobalFitExponential(GlobalFit):
                 self.recent_dependences_derrivs_array[relative_i].append(derriv_scale)
              
             # associate proper functions for proper parameters
-            m = re.findall("^tau(\d+)_(\d+)$", key)
+            m = re.findall(r"^tau(\d+)_(\d+)$", key)
             if len(m) > 0:  # check if this is tau param
                 self.recent_lambda_array.append(int(m[0][1]))
                 self.recent_tauj_array.append(int(m[0][0]))
                 self.recent_Dfuncs_array.append(self.expNGaussDatasetJacobianByTau)
                 continue
-            m = re.findall("^pre_exp(\d+)_(\d+)$", key)
+            m = re.findall(r"^pre_exp(\d+)_(\d+)$", key)
             if len(m) > 0:  # check if this is pre_exp param
                 self.recent_lambda_array.append(int(m[0][1]))
                 self.recent_tauj_array.append(int(m[0][0]))
                 self.recent_Dfuncs_array.append(self.expNGaussDatasetJacobianByPreExp)
                 continue
-            m = re.findall("^fwhm_(\d+)$", key)
+            m = re.findall(r"^fwhm_(\d+)$", key)
             if len(m) > 0:  # check if this is sigma/fhwm param
                 self.recent_lambda_array.append(int(m[0][0]))
                 self.recent_tauj_array.append(None)
                 self.recent_Dfuncs_array.append(self.expNGaussDatasetJacobianBySigma)
                 continue       
-            m = re.findall("^yinf_(\d+)$", key)
+            m = re.findall(r"^yinf_(\d+)$", key)
             if len(m) > 0:  # check if this is yinf (infinite offset) param
                 self.recent_lambda_array.append(int(m[0][0]))
                 self.recent_tauj_array.append(None)
                 self.recent_Dfuncs_array.append(self.expNGaussDatasetJacobianByYInf)
                 continue
-            m = re.findall("^y0_(\d+)$", key)
+            m = re.findall(r"^y0_(\d+)$", key)
             if len(m) > 0:  # check if this is y0 (global offset) param
                 self.recent_lambda_array.append(int(m[0][0]))
                 self.recent_tauj_array.append(None)
                 self.recent_Dfuncs_array.append(self.expNGaussDatasetJacobianByY0)
                 continue
-            m = re.findall("^t0_(\d+)$", key)
+            m = re.findall(r"^t0_(\d+)$", key)
             if len(m) > 0:  # check if this is t0 (time zero) param
                 self.recent_lambda_array.append(int(m[0][0]))
                 self.recent_tauj_array.append(None)

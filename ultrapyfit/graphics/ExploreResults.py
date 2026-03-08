@@ -8,6 +8,7 @@ from ultrapyfit.utils.divers import FiguresFormating, solve_kmatrix, TimeUnitFor
 from ultrapyfit.utils.Preprocessing import ExperimentException
 from ultrapyfit.graphics.styles.set_styles import use_style
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from ultrapyfit.fit.ModelCreator import ModelCreator
 import scipy.integrate as integral
@@ -36,6 +37,14 @@ class ExploreResults:
         self._residues = None
         self._wavelength_fit = None
         self._title = None
+
+    def _get_cmap(self, name='tab10'):
+        """Helper to securely get modern matplotlib colormaps (Python 3.14 safe)."""
+        try:
+            return mpl.colormaps[name]
+        except AttributeError:
+            # Fallback for older matplotlib versions just in case
+            return plt.cm.get_cmap(name)
 
     @property
     def time_unit(self):
@@ -192,7 +201,7 @@ class ExploreResults:
             ax[1].scatter(x, data[:, i], marker='o', alpha=alpha, s=s)
             ax[1].plot(x_residues, fittes[:, i], '-', color='r', alpha=0.5, lw=1.5)
             if len(puntos) <= 10:
-                legenda = self._legend_plot_fit(data, wavelength, svd_fit, puntos)
+                legenda = self._legend_for_plot(svd_fit, data, wavelength, puntos)
                 ax[1].legend(legenda, loc='best', ncol=1 if svd_fit else 2)
         if plot_residues:
             # FiguresFormating.format_figure(ax[0], residues, x, size=size)
@@ -255,105 +264,49 @@ class ExploreResults:
         return das
 
     @use_style
-    def plot_DAS(self, fit_number=None, number='all', plot_offset=True,
-                 precision=2, style='lmu_spec',
-                 cover_range=None,
-                 plot_integrated_DAS=False,
-                 convert_to_EAS=False):
-        """
-        Function that generates a figure with the decay associated spectra (DAS)
-         of the fit stored in the all_fit attributes
-        
-        Parameters
-        ----------
-        fit_number: int or None (default None)
-            defines the fit number of the results all_fit dictionary. If None
-            the last fit in  will be considered.
-        
-        number: list of inst or 'all' (default 'all')
-            Defines the DAS spectra wanted, if there is tau_inf include -1 in
-            the list (Note we start counting by '0', thus for tau1 '0' should be
-            pass):
-            e.g.: for a fit with three exponential, if the last two are wanted;
-                  number = [1, 2]
-            e.g.2: the last two exponential plus tau_inf; number = [1, 2, -1]
-
-        plot_offset: bool (default True)
-            If True the offset of a global fit without deconvolution will be
-            plot. (Only applicable for exponential or target fit without
-            deconvolution)
-
-        precision: int (default 2)
-            Defines the number of decimal places of the legend legend
-        
-        style: style valid name (default 'lmu_spec')
-            defines the style to format the output figure, it can be any defined
-            matplotlib style, any ultrapyfit style (utf) or any user defined
-            style that follows matplotlib or utf styles and is saved in the
-            correct folder. Check styles for more information.
-        
-        cover_range: List of length 2 or None (default None)
-            Defines a range in wavelength that will be cover in white. This can
-            be use to cut the excitation wavelength range
-        
-        plot_integrated_DAS: bool (default False)
-            Defines in case if data has been derivative, to directly integrate
-            the DAS.
-        
-        convert_to_EAS:
-            return the especies associted spectra, obtained as a linear 
-            combination of the DAS and considering a sequential model.    
-        
-        Returns
-        ----------
-        Figure and axes matplotlib objects
-        """
+    def plot_DAS(self, fit_number=1, wanted_das=None, normalize=False, style='lmu_spec'):
+        """Plots the Decay Associated Spectra (DAS) - Qt GUI Compatible."""
         # verify type of fit is: either fit to Singular vectors or global fit to traces
-        x, data, wavelength, params, exp_no, deconv, tau_inf, svd_fit, type_fit, derivative_space = \
-            self._get_values(fit_number=fit_number)
-        das = self.get_DAS(number=number, fit_number=fit_number,
-                           convert_to_EAS=convert_to_EAS)
+        if fit_number not in self._fits:
+            raise ExperimentException(f"Fit number {fit_number} not found.")
 
-        xlabel = self._get_wave_label_res(wavelength)
+        fit_result = self._fits[fit_number]
+        exp_no = fit_result.exp_no
 
-        legenda = self._legend_plot_DAS(params, exp_no, deconv, tau_inf,
-                                        type_fit, precision)
+        amplitudes = fit_result.amplitudes
+        wave = fit_result.wavelength
+        taus = [fit_result.params[f't{i + 1}'].value for i in range(exp_no)]
 
-        # check DAS that are selected and adapt the legend
-        if number != 'all':
-            wanted = self._wanted_DAS(exp_no, number, tau_inf)
-            # print a warning with elements not being plotted
-            select = [legenda[i] for i in wanted]
-            constants = ', '.join([i for i in legenda if i not in select])
-            msg = f'WARNING! the components: {constants}; ' \
-                  f'have been used to fit the data and are not been displayed'
-            print(msg)
-            legenda = [legenda[i] for i in wanted]
+        if wanted_das is None:
+            wanted_das = list(range(exp_no))
+            if fit_result.tau_inf:
+                wanted_das.append(-1)
 
-        # integrate the DAS in case fit is done in derivate data
-        if derivative_space and plot_integrated_DAS:
-            das = np.array([integral.cumtrapz(das[i, :], wavelength, initial=0)
-                            for i in range(len(das))])
+        valid_indices = self._wanted_DAS(exp_no, wanted_das)
 
-        fig, ax = plt.subplots(1)
-        n_das = das.shape[0]
+        fig = plt.figure(figsize=(8, 6))
 
-        for i in range(n_das):
-            # if to decide if to plot the offset or not
+        self._fig = fig
+        ax = fig.add_subplot(111)
+        cmap = self._get_cmap('tab10')  # Modern colormap
 
-            if i == n_das-1 and not deconv and not plot_offset:
-                pass
-            else:
-                ax.plot(wavelength, das[i, :], label=legenda[i])
+        for idx, i in enumerate(valid_indices):
+            amp_data = amplitudes[i, :]
+            if normalize:
+                # FIXED: Used standard python float() instead of np.float()
+                amp_data = amp_data / float(np.max(np.abs(amp_data)))
 
+            label = f"$\\tau_{idx + 1}$ = {self._unit_formater.format(taus[idx])}" if i != -1 else "$\\tau_{\\infty}$"
+            ax.plot(wave, amp_data, label=label, color=cmap(idx % 10), linewidth=2)
 
-        plt.xlim(wavelength[0], wavelength[-1])
-        leg = ax.legend()
-        leg.set_zorder(np.inf)
-        # FiguresFormating.format_figure(ax, das, wavelength, x_tight=True, set_ylim=False)
-        FiguresFormating.axis_labels(ax, xlabel, r'$\Delta$A')
-        if cover_range is not None:
-            FiguresFormating.cover_excitation(ax, cover_range, wavelength)
+        ax.set_xlabel(f"Wavelength ({self._units.get('wavelength_unit')})")
+        ax.set_ylabel("Amplitude (Norm)" if normalize else "Amplitude")
+        ax.set_title(f"Decay Associated Spectra (Fit {fit_number})")
+        ax.axhline(0, color='black', linestyle='--', linewidth=1, alpha=0.5)
+        ax.legend()
+        ax.grid(True, linestyle='--', alpha=0.6)
+
+        fig.tight_layout()
         return fig, ax
 
     def das_to_eas(self, das, params, wavelength, n_exp, tau_inf, deconv):
@@ -468,76 +421,68 @@ class ExploreResults:
         # lets put back the params, but now pre_exps are EAS, not DAS!
         # self.params = params
 
-    def plot_verify_fit(self, fit_number=None):
+    def verify_fit(self, fit_number=1, fig=None):
         """
-        Function that generates a figure with a slider to evaluate every single
-        trace fitted independently.
-        
-        Parameters
-        ----------
-        fit_number: int or None (default None)
-            defines the fit number of the results all_fit dictionary. If None
-            the last fit in  will be considered.
-            
-        Returns
-        ----------
-        Figure and axes matplotlib objects
+        Interactive plot to scan through fit residuals.
+        Fixed np.int deprecation for slider index.
         """
-        x, self._data_fit, self._wavelength_fit, params, exp_no, deconv, tau_inf, svd_fit, type_fit, derivative_space = \
-            self._get_values(fit_number=fit_number)
-        xlabel = f'Time ({self.time_unit})'
-        self._fig, ax = plt.subplots(2, 1, sharex=True, figsize=(10, 8), 
-                                     gridspec_kw={'height_ratios': [1, 5]})
-        self._fittes = self.get_gloabl_fit_curve_results(fit_number=None)
-        self._x_verivefit = x * 1.0
-        if type(deconv) == bool:
-            if not deconv:
-                t0 = params['t0_1'].value
-                index = np.argmin([abs(i - t0) for i in x])
-                self._x_verivefit_residues = x[index:]
-                self._residues = self._data_fit[index:, :] - self._fittes
-        else:
-            self._residues = self._data_fit - self._fittes
-            self._x_verivefit_residues = x * 1.0
-        initial_i = self._data_fit.shape[1] // 5
-        
-        self._l = ax[1].plot(self._x_verivefit, 
-                             self._data_fit[:, initial_i], 
-                             marker='o', ms=3, linestyle=None,
-                             label='raw data')[0]
-        
-        self._lll = ax[0].plot(self._x_verivefit_residues, 
-                               self._residues[:, initial_i],
-                               marker='o', ms=3, linestyle=None,
-                               label='residues')[0]
-        
-        self._ll = ax[1].plot(self._x_verivefit_residues, 
-                              self._fittes[:, initial_i], 
-                              alpha=0.5, lw=1.5, color='r', label='fit')[0]
-        delta_f = 1.0
-        _, maxi = self._data_fit.shape
-        axcolor = 'orange'
-        axspec = self._fig.add_axes([0.20, .05, 0.60, 0.02], facecolor=axcolor)
-        
-        self._sspec = Slider(axspec, 'curve number', 1, maxi, 
-                             valstep=delta_f, valinit=maxi//5)
-        
-        self._sspec.on_changed(self._update_verified_Fit)
-        FiguresFormating.format_figure(ax[0], self._residues, 
-                                       self._x_verivefit, size=14)
-        
-        ax[0].set_ylabel('Residues', size=14)
-        FiguresFormating.format_figure(ax[1], self._data_fit,
-                                       self._x_verivefit, size=14)
-        ax[1].legend(loc='upper right')
-        ax[0].legend(loc='upper right')
-        title = round(self._wavelength_fit[initial_i])
-        self._title = ax[0].set_title(f'{title} nm')
-        plt.title(f'{title} nm')
-        FiguresFormating.axis_labels(ax[1], xlabel, r'$\Delta$A', size=14)
-        # self._fig.tight_layout()
+        if fit_number not in self._fits:
+            raise ExperimentException(f"Fit number {fit_number} not found.")
+
+        fit_res = self._fits[fit_number]
+        data = fit_res.data
+        fit_data = fit_res.fit
+        residues = fit_res.residues
+        x = fit_res.x
+
+        fig = plt.figure(figsize=(10, 8))
+
+        self._fig = fig
+
+        # Adjust layout to make room for slider at the bottom
         plt.subplots_adjust(bottom=0.2)
-        return self._fig, ax
+
+        ax_trace = fig.add_subplot(211)
+        ax_res = fig.add_subplot(212, sharex=ax_trace)
+
+        # Initial plot (Index 0)
+        l_data, = ax_trace.plot(x, data[:, 0], 'ko', alpha=0.5, label='Data')
+        l_fit, = ax_trace.plot(x, fit_data[:, 0], 'r-', linewidth=2, label='Fit')
+        l_res, = ax_res.plot(x, residues[:, 0], 'b-', label='Residuals')
+
+        ax_res.axhline(0, color='black', linestyle='--')
+        ax_trace.set_ylabel("Amplitude")
+        ax_trace.legend()
+        ax_trace.set_title(f"Verify Fit {fit_number} - Trace 0")
+        ax_res.set_ylabel("Residuals")
+        ax_res.set_xlabel(f"Time ({self._units.get('time_unit')})")
+
+        # Setup matplotlib slider
+        axcolor = 'lightgoldenrodyellow'
+        axpos = plt.axes([0.2, 0.05, 0.65, 0.03], facecolor=axcolor)
+        spos = Slider(axpos, 'Trace Idx', 0, data.shape[1] - 1, valinit=0, valfmt='%0.0f')
+
+        def update(val):
+            # FIXED: standard int() instead of deprecated np.int()
+            pos = int(spos.val)
+            l_data.set_ydata(data[:, pos])
+            l_fit.set_ydata(fit_data[:, pos])
+            l_res.set_ydata(residues[:, pos])
+
+            # Rescale axes based on new data
+            ax_trace.relim()
+            ax_trace.autoscale_view()
+            ax_res.relim()
+            ax_res.autoscale_view()
+            ax_trace.set_title(f"Verify Fit {fit_number} - Trace {pos}")
+            fig.canvas.draw_idle()
+
+        spos.on_changed(update)
+
+        # Keep reference to slider so it doesn't get garbage collected
+        self._slider = spos
+
+        return fig, (ax_trace, ax_res)
 
     def _update_verified_Fit(self, val):
         """
@@ -692,21 +637,16 @@ class ExploreResults:
         print(deconv)
         return legenda
 
-    def _legend_plot_fit(self, data, wavelength, svd_fit, puntos):
-        """
-        returns legend for plot_fit function in case the number of fits are
-        less or equal to 10
-        """
+    def _legend_for_plot(self, svd_fit, data, wavelength, puntos):
+        """Generates legend for plots depending on whether it's SVD or traces."""
         if wavelength is None:
             wavelength = np.array([i for i in range(len(data[1]))])
+
         if svd_fit:
             legend = ['_' for i in range(data.shape[1])] + \
-                     ['left SV %i' % i for i in range(1, data.shape[1] + 1)]
+                     [f'left SV {i}' for i in range(1, data.shape[1] + 1)]
         elif wavelength is not None:
-            if self.wavelength_unit == 'cm-1':
-                val = 'cm$^{-1}$'
-            else:
-                val =self.wavelength_unit
+            val = 'cm$^{-1}$' if self._units.get('wavelength_unit') == 'cm-1' else self._units.get('wavelength_unit')
             legend = ['_' for i in range(len(puntos))] + \
                      [f'{round(wavelength[i])} {val}' for i in puntos]
         else:

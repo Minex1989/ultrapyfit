@@ -167,7 +167,7 @@ class ExploreData(PlotSVD):
         fig, ax = plt.subplots(1)
         alpha = 0.60
         for i in range(len(values)):
-            ax.plot(self.x, data[:, values[i]], marker='o', alpha=alpha, ms=4, ls='')
+            ax.plot(self.x, data[:, values[i]], alpha=alpha, ms=4, ls='-')
         if legend == 'auto':
             if len(values) <= 10 or traces == 'auto':
                 legenda = self._traces_legend(traces, values)

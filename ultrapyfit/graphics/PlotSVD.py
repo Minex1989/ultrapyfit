@@ -6,6 +6,7 @@ Created on Sun Nov 15 11:29:27 2020
 """
 from scipy.sparse.linalg import svds as svd
 import matplotlib.pyplot as plt
+import matplotlib as mpl
 import numpy as np
 from matplotlib.widgets import Slider, Button
 from ultrapyfit.utils.divers import select_traces
@@ -83,45 +84,111 @@ class PlotSVD:
         u, s, v = svd(self.data, k=vectors)
         return u[:, ::-1], s[::-1], v[::-1, :]
 
-    def plot_full_SVD(self, vectors=1, select=False, calculate=15):
-        if self._fig is not None:
-            self._close_svd_fig()
-        wavelength = self.wavelength
-        if self._S is None or len(self._S) != calculate:
-            self._U, self._S, self._V = self._calculateSVD(vectors=15)
-        if len(wavelength) != self._V.shape[1] or\
-                len(self.x) != self._U.shape[0]:
-            self._U, self._S, self._V = self._calculateSVD(vectors=15)
-        msg = 'vector value should be between 1 and the number of ' \
-              'calculated values'
-        assert 0 < vectors < len(self._S), msg
-        if vectors == 'all':
-            vectors = len(self._S)
-        self._fig, self._ax = plt.subplots(1, 3, figsize=(14, 6))
-        self._ax[1].plot(range(1, len(self._S) + 1), self._S, marker='o')
-        for i in range(vectors):
-            self._ax[0].plot(self.x, self._U[:, i])
-            self._ax[2].plot(wavelength, self._V[i, :])
-        self._ax[0].set_title('Left singular vectors')
-        self._ax[1].set_title('Eingen values')
-        self._ax[2].set_title('Right singular vectors')
-        self._number_of_vectors_plot = vectors
-        self._vertical_line_SVD = self._ax[1].axvline(vectors, alpha=0.5,
-                                                      color='red',
-                                                      zorder=np.inf)
-        
-        axspec = self._fig.add_axes([0.20, .02, 0.60, 0.01], 
-                                    facecolor='orange')
-        self._specSVD = Slider(axspec, 'curve number', 1, len(self._S),
-                               valstep=1, valinit=vectors)
-        self._specSVD.on_changed(self._updatePlotSVD)
-        # self._fig.canvas.mpl_connect('close_event', self._close_svd_fig())
-        if select:
-            b_ax = plt.axes([0.85, 0.025, 0.1, 0.04])
-            self._button_svd_select = Button(b_ax, 'Select', color='tab:red',
-                                             hovercolor='0.975')
-            self._button_svd_select.on_clicked(self._selectSVD)
-        self._fig.show()
+    def calculate_svd(self, n_components=15):
+        """
+        Calculates the Singular Value Decomposition (SVD) of the data and
+        securely stores the U, S, and V matrices internally.
+
+        Parameters
+        ----------
+        n_components : int, optional
+            Number of singular vectors to calculate. Default is 15.
+        """
+        from scipy.sparse.linalg import svds
+
+        # scipy svds requires k to be strictly less than the minimum dimension
+        max_components = min(self.data.shape) - 1
+        n_components = min(n_components, max_components)
+
+        u, s, v = svd(self.data, k=n_components)
+
+        # Update internal state safely (Encapsulation)
+        self._U = u
+        self._S = s
+        self._V = v
+
+    def plot_full_svd(self, components=3, log_scale=True):
+        """
+        Plots the full SVD results: Scree plot, Kinetics (Left Singular Vectors),
+        and Spectra (Right Singular Vectors).
+
+        Parameters
+        ----------
+        components : int, optional
+            Number of components to plot. The default is 3.
+        log_scale : bool, optional
+            Whether to use a logarithmic y-axis for the singular values (Scree plot).
+            Default is True.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+        axes : numpy.ndarray of matplotlib.axes.Axes
+        """
+
+        # Create a new figure (similar to plot_traces / plot_spectra)
+        fig = plt.figure(figsize=(10, 8))
+
+        # Save to self._fig so that other internal methods (like cursors or
+        # export functions) can find it if needed.
+        self._fig = fig
+
+        # Create subplots: Top full width for Scree, Bottom for Kinetics & Spectra
+        ax_scree = fig.add_subplot(2, 1, 1)
+        ax_kin = fig.add_subplot(2, 2, 3)
+        ax_spec = fig.add_subplot(2, 2, 4)
+        axes = np.array([ax_scree, ax_kin, ax_spec])
+
+        # SVD from scipy.sparse.linalg.svds returns ascending singular values.
+        # Check if we need to reverse them to be descending for correct plotting.
+        if hasattr(self, '_S') and self._S is not None:
+            if len(self._S) > 1 and self._S[0] < self._S[-1]:
+                s = self._S[::-1]
+                u = self._U[:, ::-1] if hasattr(self, '_U') else None
+                v = self._V[::-1, :] if hasattr(self, '_V') else None
+            else:
+                s = self._S
+                u = self._U
+                v = self._V
+
+            # 1. Plot Scree
+            ax_scree.plot(np.arange(1, len(s) + 1), s, 'ko-', markersize=5, label="Singular Values")
+            ax_scree.plot(np.arange(1, components + 1), s[:components], 'ro', markersize=7, label="Selected")
+            if log_scale:
+                ax_scree.set_yscale('log')
+                ax_scree.set_ylabel("Log(Singular Value)")
+            else:
+                ax_scree.set_yscale('linear')
+                ax_scree.set_ylabel("Singular Value")
+
+            ax_scree.set_title("Singular Values (Scree Plot)")
+            ax_scree.set_xlabel("Component Index")
+            ax_scree.grid(True, linestyle='--', alpha=0.6)
+            ax_scree.legend()
+
+            cmap = mpl.colormaps['tab10']
+
+            # 2. Plot Kinetics (U)
+            if u is not None:
+                for i in range(min(components, u.shape[1])):
+                    ax_kin.plot(self.x, u[:, i], label=f'Comp {i + 1}', color=cmap(i % 10))
+            ax_kin.set_title("Left Singular Vectors (Kinetics)")
+            ax_kin.set_xlabel("Time")
+            ax_kin.set_ylabel("Amplitude")
+            ax_kin.grid(True, linestyle='--', alpha=0.6)
+            ax_kin.legend()
+
+            # 3. Plot Spectra (V)
+            if v is not None:
+                for i in range(min(components, v.shape[0])):
+                    ax_spec.plot(self.wavelength, v[i, :], label=f'Comp {i + 1}', color=cmap(i % 10))
+            ax_spec.set_title("Right Singular Vectors (Spectra)")
+            ax_spec.set_xlabel("Wavelength")
+            ax_spec.set_ylabel("Amplitude")
+            ax_spec.grid(True, linestyle='--', alpha=0.6)
+            ax_spec.legend()
+
+        return fig, axes
 
     def _close_svd_fig(self):
         """

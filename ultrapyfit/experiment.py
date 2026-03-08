@@ -1381,18 +1381,24 @@ class Experiment(ExploreData):
                 minimizer.weights = self._weights
             if self.allow_stop:
                 minimizer.allow_stop = True
-            
+
+            self._active_minimizer = minimizer
+
             if self._params_initialized == 'Exponential':
                 results = minimizer.global_fit(vary_taus=vary, maxfev=maxfev,
                                                apply_weights=apply_weights,
                                                use_jacobian=use_jacobian,
-                                               verbose=verbose)
+                                               verbose=verbose,
+                                               ftol=1e-4,
+                                               xtol=1e-4)
             else:
                 # TODO add vary_k from vary need to modify Global fit
-                results = minimizer.global_fit(maxfev=maxfev, # vary_k=vary,
+                results = minimizer.global_fit(maxfev=maxfev,# vary_k=vary,
                                                apply_weights=apply_weights,
                                                use_jacobian=use_jacobian,
-                                               verbose=verbose)
+                                               verbose=verbose,
+                                               ftol=1e-4,
+                                               xtol=1e-4)
 
                 results.details['model_names'] = self._model_params.model_names
             # indicate if the fit is singular vectors
@@ -2000,7 +2006,7 @@ class Experiment(ExploreData):
         """
         new_data, new_wave = Prep.cut_columns(self.data,
                                               self.wavelength,
-                                              mini, maxi, True)
+                                              mini, maxi, 'select')
         self.selected_traces, self.selected_wavelength = new_data, new_wave
         self.fitting._readapt_params()
         self._average_selected_traces = 0

@@ -39,7 +39,7 @@ class SnaptoCursor(object):
         else:
             x = self.x_pos
             y = self.y_pos
-        self.ly.set_xdata(x)
+        self.ly.set_xdata([x, x])
         self.marker.set_data([x], [y])
         if abs(x) >= 0.1:
             texto_x = 1
@@ -58,7 +58,7 @@ class SnaptoCursor(object):
             except:
                 texto_y = 3
         if self.similar.all() == False:
-            self.lx.set_ydata(y)
+            self.lx.set_ydata([y, y])
             self.txt.set_text('x='+str(round(x, texto_x)) +
                               ', y='+str(round(y, texto_y)))
             self.txt.set_position((x, y))
