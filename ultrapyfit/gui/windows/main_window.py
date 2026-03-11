@@ -1619,8 +1619,13 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         # row_col_idx[1] is the Wavelength index
         wave_idx = row_col_idx[1]
         # Block signals so restoring settings doesn't trigger 50 useless replots!
+        shape_str = f"{self.experiments.get(exp_id).data.shape[0]} x {self.experiments.get(exp_id).data.shape[1]}"
         self._is_loading_settings = True
         try:
+            # Metadata
+            self.cbTimeMetric.setCurrentText(f"{self.experiments.get(exp_id).time_unit}")
+            self.cbWavelengthMetric.setCurrentText(f"{self.experiments.get(exp_id).wavelength_unit}")
+            self.lblMetaShape.setText(shape_str)
             self.cbViewMode.setCurrentIndex(s.get('view_mode', 0))
             # Restore 3D
             self.sbRenderQuality3D.setValue(s.get('3d_resolution', 5))

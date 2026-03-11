@@ -2870,7 +2870,7 @@
      <x>0</x>
      <y>0</y>
      <width>1276</width>
-     <height>33</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -3039,8 +3039,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>200</width>
-          <height>680</height>
+          <width>241</width>
+          <height>694</height>
          </rect>
         </property>
         <attribute name="label">
@@ -3048,7 +3048,7 @@
         </attribute>
         <layout class="QVBoxLayout" name="verticalLayout_13">
          <item>
-          <widget class="QLabel" name="TimeMetricLabel">
+          <widget class="QLabel" name="lblTimeMetric">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -3109,7 +3109,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QLabel" name="WavelengthMetricLabel">
+          <widget class="QLabel" name="lblWavelengthMetric">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -3150,6 +3150,20 @@
              <string>Picometer (pm)</string>
             </property>
            </item>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lblMetaShapeDescription">
+           <property name="text">
+            <string>Adatpontok (Idő x Spektrum):</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="lblMetaShape">
+           <property name="text">
+            <string>-</string>
+           </property>
           </widget>
          </item>
          <item>

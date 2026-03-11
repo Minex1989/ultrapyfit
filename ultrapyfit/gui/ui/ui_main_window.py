@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'main_window.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.10.2
+## Created by: Qt User Interface Compiler version 6.10.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -1239,7 +1239,7 @@ class Ui_MainWindow(object):
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QMenuBar(MainWindow)
         self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 1276, 33))
+        self.menubar.setGeometry(QRect(0, 0, 1276, 23))
         self.menuFile = QMenu(self.menubar)
         self.menuFile.setObjectName(u"menuFile")
         MainWindow.setMenuBar(self.menubar)
@@ -1300,21 +1300,21 @@ class Ui_MainWindow(object):
         self.tbxProperties.setSizePolicy(sizePolicy6)
         self.pageMetadata = QWidget()
         self.pageMetadata.setObjectName(u"pageMetadata")
-        self.pageMetadata.setGeometry(QRect(0, 0, 200, 680))
+        self.pageMetadata.setGeometry(QRect(0, 0, 241, 694))
         self.verticalLayout_13 = QVBoxLayout(self.pageMetadata)
         self.verticalLayout_13.setObjectName(u"verticalLayout_13")
-        self.TimeMetricLabel = QLabel(self.pageMetadata)
-        self.TimeMetricLabel.setObjectName(u"TimeMetricLabel")
-        sizePolicy2.setHeightForWidth(self.TimeMetricLabel.sizePolicy().hasHeightForWidth())
-        self.TimeMetricLabel.setSizePolicy(sizePolicy2)
-        self.TimeMetricLabel.setMinimumSize(QSize(0, 0))
+        self.lblTimeMetric = QLabel(self.pageMetadata)
+        self.lblTimeMetric.setObjectName(u"lblTimeMetric")
+        sizePolicy2.setHeightForWidth(self.lblTimeMetric.sizePolicy().hasHeightForWidth())
+        self.lblTimeMetric.setSizePolicy(sizePolicy2)
+        self.lblTimeMetric.setMinimumSize(QSize(0, 0))
         font2 = QFont()
         font2.setPointSize(10)
         font2.setBold(False)
         font2.setKerning(True)
-        self.TimeMetricLabel.setFont(font2)
+        self.lblTimeMetric.setFont(font2)
 
-        self.verticalLayout_13.addWidget(self.TimeMetricLabel)
+        self.verticalLayout_13.addWidget(self.lblTimeMetric)
 
         self.cbTimeMetric = QComboBox(self.pageMetadata)
         self.cbTimeMetric.addItem("")
@@ -1330,13 +1330,13 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_13.addWidget(self.cbTimeMetric)
 
-        self.WavelengthMetricLabel = QLabel(self.pageMetadata)
-        self.WavelengthMetricLabel.setObjectName(u"WavelengthMetricLabel")
-        sizePolicy2.setHeightForWidth(self.WavelengthMetricLabel.sizePolicy().hasHeightForWidth())
-        self.WavelengthMetricLabel.setSizePolicy(sizePolicy2)
-        self.WavelengthMetricLabel.setFont(font3)
+        self.lblWavelengthMetric = QLabel(self.pageMetadata)
+        self.lblWavelengthMetric.setObjectName(u"lblWavelengthMetric")
+        sizePolicy2.setHeightForWidth(self.lblWavelengthMetric.sizePolicy().hasHeightForWidth())
+        self.lblWavelengthMetric.setSizePolicy(sizePolicy2)
+        self.lblWavelengthMetric.setFont(font3)
 
-        self.verticalLayout_13.addWidget(self.WavelengthMetricLabel)
+        self.verticalLayout_13.addWidget(self.lblWavelengthMetric)
 
         self.cbWavelengthMetric = QComboBox(self.pageMetadata)
         self.cbWavelengthMetric.addItem("")
@@ -1346,6 +1346,16 @@ class Ui_MainWindow(object):
         self.cbWavelengthMetric.setFont(font3)
 
         self.verticalLayout_13.addWidget(self.cbWavelengthMetric)
+
+        self.lblMetaShapeDescription = QLabel(self.pageMetadata)
+        self.lblMetaShapeDescription.setObjectName(u"lblMetaShapeDescription")
+
+        self.verticalLayout_13.addWidget(self.lblMetaShapeDescription)
+
+        self.lblMetaShape = QLabel(self.pageMetadata)
+        self.lblMetaShape.setObjectName(u"lblMetaShape")
+
+        self.verticalLayout_13.addWidget(self.lblMetaShape)
 
         self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -1582,18 +1592,20 @@ class Ui_MainWindow(object):
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"F\u00e1jlok", None))
         self.dockExperiments.setWindowTitle(QCoreApplication.translate("MainWindow", u"K\u00eds\u00e9rletek", None))
         self.dockProperties.setWindowTitle(QCoreApplication.translate("MainWindow", u"Tuljadons\u00e1gok", None))
-        self.TimeMetricLabel.setText(QCoreApplication.translate("MainWindow", u"Id\u0151 m\u00e9rt\u00e9kegys\u00e9ge:", None))
+        self.lblTimeMetric.setText(QCoreApplication.translate("MainWindow", u"Id\u0151 m\u00e9rt\u00e9kegys\u00e9ge:", None))
         self.cbTimeMetric.setItemText(0, QCoreApplication.translate("MainWindow", u"Nanosecond (ns)", None))
         self.cbTimeMetric.setItemText(1, QCoreApplication.translate("MainWindow", u"Microsecond (\u03bcs)", None))
         self.cbTimeMetric.setItemText(2, QCoreApplication.translate("MainWindow", u"Picosecond (ps)", None))
         self.cbTimeMetric.setItemText(3, QCoreApplication.translate("MainWindow", u"Femtosecond (fs)", None))
         self.cbTimeMetric.setItemText(4, QCoreApplication.translate("MainWindow", u"Attosecond (as)", None))
 
-        self.WavelengthMetricLabel.setText(QCoreApplication.translate("MainWindow", u"Hull\u00e1mhossz m\u00e9rt\u00e9kegys\u00e9ge:", None))
+        self.lblWavelengthMetric.setText(QCoreApplication.translate("MainWindow", u"Hull\u00e1mhossz m\u00e9rt\u00e9kegys\u00e9ge:", None))
         self.cbWavelengthMetric.setItemText(0, QCoreApplication.translate("MainWindow", u"Nanometer (nm)", None))
         self.cbWavelengthMetric.setItemText(1, QCoreApplication.translate("MainWindow", u"Micrometer (\u00b5m)", None))
         self.cbWavelengthMetric.setItemText(2, QCoreApplication.translate("MainWindow", u"Picometer (pm)", None))
 
+        self.lblMetaShapeDescription.setText(QCoreApplication.translate("MainWindow", u"Adatpontok (Id\u0151 x Spektrum):", None))
+        self.lblMetaShape.setText(QCoreApplication.translate("MainWindow", u"-", None))
         self.tbxProperties.setItemText(self.tbxProperties.indexOf(self.pageMetadata), QCoreApplication.translate("MainWindow", u"Metaadatok", None))
     # retranslateUi
 

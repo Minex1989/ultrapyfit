@@ -4,5 +4,4 @@ numpy
 lmfit
 pyside6
 scipy
--e .
 seaborn
