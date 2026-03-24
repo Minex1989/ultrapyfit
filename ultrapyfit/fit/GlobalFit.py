@@ -171,7 +171,7 @@ class GlobalFitResult:
         to_print = [f'Global {type_fit} fit']
         # print_resultados='\t'+',\n\t'.join([f'{name.split("_")[0]}:\t{round(params[name].value,4)}\t{params[name].vary}' for name in names])
         to_print.append('-------------------------------------------------')
-        to_print.append('Results:\tParameter\t\tInitial value\tFinal value\t\tVary')
+        to_print.append('Results:\tParameter\tInitial value\tFinal value\tVary')
         for i in range(len(names)):
             line = [f'\t{print_names[i]}:',
                     '{:.4f}'.format(params[names[i]].init_value),

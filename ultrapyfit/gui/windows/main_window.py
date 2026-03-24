@@ -1,13 +1,13 @@
 import io
-
 from PySide6 import QtWidgets
 from PySide6.QtCore import Qt, QRegularExpression, QObject, Signal
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtGui import QRegularExpressionValidator, QDoubleValidator
 from ultrapyfit.gui.ui.ui_main_window import Ui_MainWindow
 from ultrapyfit.gui.windows.import_dialog import ImportDialog
 from ultrapyfit.experiment import Experiment
+from ultrapyfit.utils.Preprocessing import ExperimentException
 from matplotlib import pyplot as plt
-from matplotlib.widgets import Cursor
+from matplotlib.widgets import SpanSelector
 from typing import Any
 import numpy as np
 import uuid
@@ -34,41 +34,66 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self._cursor = None
         self._cid_move = None
         self._cid_click = None
+        self._chirp_click_cid = None
+        self._active_span_selector = None
         self.setupUi(self)
         self._setup_connections()
         self._is_fitting = False
         self._set_workspace_mode(False)
         regex_list = QRegularExpression(r"^[0-9\.\s,]+$")
-        validator_list = QRegularExpressionValidator(regex_list)
-        self.leGlobalFitTraces.setValidator(validator_list)
-        self.leInitialTau.setValidator(validator_list)
-        self.leCustomTimesSpectral.setValidator(validator_list)
-        self.leCustomWavelengthTrace.setValidator(validator_list)
-        self.leGlobalKineticsSel.setValidator(validator_list)
+        positive_float_validator = QRegularExpressionValidator(regex_list)
+        float_validator = QDoubleValidator()
+        float_validator.setNotation(QDoubleValidator.Notation.StandardNotation)
+        update_positive_float_validators = [
+            self.leGlobalFitTraces,
+            self.leInitialTau,
+            self.leCustomTimesSpectral,
+            self.leCustomWavelengthTrace,
+            self.leGlobalKineticsSel,
+            self.leCutWaveMin,
+            self.leCutWaveMax,
+            self.lePolyBasePoints,
+            self.leAvgTimeStart,
+            self.leAvgTimeStep,
+            self.leDeletePoints,
+            self.leCalibPixels,
+            self.leCalibWaves
+        ]
+        for line_edit in update_positive_float_validators:
+            line_edit.setValidator(positive_float_validator)
+        update_float_validators = [
+            self.leCutTimeMin,
+            self.leCutTimeMax,
+            self.leShiftTime,
+        ]
+        for line_edit in update_float_validators:
+            line_edit.setValidator(float_validator)
         regex_mask = QRegularExpression(r"[0-9\.\s\-,]+")
-        validator = QRegularExpressionValidator(regex_mask)
-        self.leGlobalFitMasking.setValidator(validator)
+        range_validator = QRegularExpressionValidator(regex_mask)
+        self.leGlobalFitMasking.setValidator(range_validator)
+        self.leCalibWaves.setValidator(range_validator)
+        self.leCalibPixels.setValidator(range_validator)
         self.stdout_redirector = EmittingStream()
         self.stdout_redirector.text_written.connect(self.append_fit_log)
         self.treeExperiment.setContextMenuPolicy(Qt.CustomContextMenu)
         self.treeExperiment.customContextMenuRequested.connect(self.show_tree_context_menu)
 
-        self.viewStyleDict3D = {"Felület": "surface",
-                                "Vázlat": "wireframe",
-                                "Kontúr": "contour"}
-        self.viewStyleDictSpectral = {"Ultrapyfit világos": "lmu_spec",
-                                      "Ultrapyfit sötét": "lmu_specd",
-                                      "Alapértelmezett": "default",
-                                      "Seaborn világos rács": "seaborn-v0_8-whitegrid",
-                                      "Seaborn sötét rács": "seaborn-v0_8-darkgrid",
-                                      "Sötét háttér": "dark_background",
+        self.viewStyleDict3D = {"Surface": "surface",
+                                "Wireframe": "wireframe",
+                                "Contour": "contour"}
+        self.viewStyleDictSpectral = {"Ultrapyfit bright": "lmu_spec",
+                                      "Ultrapyfit dark": "lmu_specd",
+                                      "Default": "default",
+                                      "Seaborn white grid": "seaborn-v0_8-whitegrid",
+                                      "Seaborn dark grid": "seaborn-v0_8-darkgrid",
+                                      "Dark background": "dark_background",
                                       "ggplot": "ggplot"}
-        self.viewStyleDictTrace = {"Ultrapyfit világos": "lmu_trac",
-                                   "Ultrapyfit sötét": "lmu_tracd",
-                                   "Alapértelmezett": "default",
-                                   "Seaborn világos rács": "seaborn-v0_8-whitegrid",
-                                   "Seaborn sötét rács": "seaborn-v0_8-darkgrid",
-                                   "Sötét háttér": "dark_background",
+        self.viewStyleDictTrace = {"Ultrapyfit bright": "lmu_trac",
+                                   "Ultrapyfit dark": "lmu_tracd",
+                                   "Default": "default",
+                                   "Seaborn white grid": "seaborn-v0_8-whitegrid",
+                                   "Seaborn dark grid": "seaborn-v0_8-darkgrid",
+                                   "Dark background": "dark_background",
                                    "ggplot": "ggplot"}
         # A dictionary to map TreeItems back to actual Python Objects
         # Format: { QTreeWidgetItem_ID : Experiment_Object }
@@ -84,6 +109,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.btnExportPlot.clicked.connect(self.export_plot)
         self.btnResetView3D.clicked.connect(self.reset_3d_camera)
         self.btnRunFit.clicked.connect(self.handle_fit_button_click)
+        self.cbPreprocessingTool.currentIndexChanged.connect(self.on_preprocess_tool_changed)
+        self.btnApplyPreprocess.released.connect(self.apply_preprocessing)
+        self.btnUndoPreprocess.released.connect(self.undo_preprocessing)
+        self.listPreprocessHistory.itemDoubleClicked.connect(self.on_history_double_clicked)
 
         update_3D_plot_triggers = [
             self.cbColormaps3D.currentIndexChanged,
@@ -160,6 +189,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         for signal in update_global_fit_plot_trigger:
             signal.connect(self.plot_current_data_global_fit)
         self.chkSingleDetails.stateChanged.connect(self.plot_current_data_single_fit)
+        self.cbDeleteDim.currentIndexChanged.connect(self.plot_preprocessing_preview)
 
     def _enable_controls(self, state: bool = True):
         """
@@ -187,6 +217,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.leInitialTau.setEnabled(state)
         self.chkTauInf.setEnabled(state)
         self.btnRunFit.setEnabled(state)
+        self.cbPreprocessingTool.setEnabled(state)
+        self.leCutTimeMin.setEnabled(state)
+        self.leCutTimeMax.setEnabled(state)
+        self.btnApplyPreprocess.setEnabled(state)
+        self.btnUndoPreprocess.setEnabled(state)
+        self.listPreprocessHistory.setEnabled(state)
 
     def append_fit_log(self, text):
         """Appends intercepted console print statements to the GUI."""
@@ -236,7 +272,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         self.dataset_settings[exp_id] = {}
         self._load_dataset_settings()
         self.treeExperiment.setCurrentItem(root_item)
-        self.plot_current_data_3D()
+        self.plot_preprocessing_preview()
         self._enable_controls(True)
         self.stackedViewModeOptions.setCurrentIndex(0)
         self.cbViewMode.setCurrentIndex(0)
@@ -259,12 +295,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if target_experiment:
                 self._set_workspace_mode(show_results=False)
                 self._load_dataset_settings()
-                # if self.cbViewMode.currentIndex() == 0:
-                #     self.plot_current_data_3D()
-                # elif self.cbViewMode.currentIndex() == 1:
-                #     self.plot_current_data_spectrum()
-                # elif self.cbViewMode.currentIndex() == 2:
-                #     self.plot_current_data_traces()
         else:
             # We clicked a Child (Single/Global fit)
             # We must get the ID from the PARENT
@@ -300,11 +330,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # 1. Is it a Fit? (We know fits are dictionaries!)
         if isinstance(node_data, dict) and node_data.get('type') == 'fit_result':
-            action_delete_fit = menu.addAction("Illesztés törlése (Memória felszabadítása)")
+            action_delete_fit = menu.addAction("Delete Fit")
 
         # 2. Is it an Experiment? (If it's not a dict, it must be your exp_id)
         else:
-            action_close_exp = menu.addAction("Kísérlet bezárása (Összes adat törlése)")
+            action_close_exp = menu.addAction("Close Experiment")
 
         # Show the menu
         global_pos = self.treeExperiment.viewport().mapToGlobal(position)
@@ -322,8 +352,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         experiment = self.get_experiment()
         reply = QtWidgets.QMessageBox.question(
             self,
-            'Törlés megerősítése',
-            'Biztosan törölni szeretné ezt az illesztést?\nEz a művelet nem vonható vissza.',
+            'Confirm deletion',
+            'Are you sure you want to delete this fit?\nThis action cannot be undone.',
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No
         )
@@ -338,7 +368,6 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     del experiment.fitting.fit_records.global_fits[fit_number]
                 elif fit_category == 'single':
                     del experiment.fitting.fit_records.single_fits[fit_number]
-                print(f"Illesztés {fit_number} ({fit_category}) törölve a memóriából.")
             except KeyError:
                 print(f"Figyelmeztetés: Az illesztés már nem található a memóriában.")
 
@@ -354,8 +383,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """Safely removes an entire experiment and all its settings/fits from the app."""
         reply = QtWidgets.QMessageBox.question(
             self,
-            'Kísérlet bezárása',
-            'Biztosan be szeretné zárni ezt a kísérletet?\nEz törli a memóriából a teljes adatkészletet és az összes hozzá tartozó illesztést.',
+            'Close experiment',
+            'Are you sure you want to close this experiment?\nThis will delete the entire dataset and all associated mappings from memory.',
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No
         )
@@ -383,7 +412,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 self.treeExperiment.setCurrentItem(next_item)
 
             else:
-                empty_msg = "Nincs betöltött kísérlet.\nKérjük, válasszon egyet a Projekt Felfedezőből."
+                empty_msg = "No experiments have been loaded.\nPlease select one from Project Explorer."
 
                 # Clear every single canvas in your app!
                 # (Update these names to match your actual Qt Designer object names)
@@ -403,7 +432,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 # If you have a function to gray out your toolbars/spinboxes, call it here:
                 self._enable_controls(False)
 
-            self.statusBar().showMessage("Kísérlet sikeresen bezárva és memória felszabadítva.", 5000)
+            self.statusBar().showMessage("The experiment has been successfully closed and memory has been freed.", 5000)
 
     def get_experiment(self) -> Experiment:  # Make sure to import Experiment for the type hint
         """Returns the Experiment object for the currently selected tree item."""
@@ -411,15 +440,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if item is None:
             return None
 
-        # Traverse up to find the root node
         parent_item = item
         while parent_item.parent() is not None:
             parent_item = parent_item.parent()
 
-        # THE FIX: Extract the UUID from the root node (parent_item)
         exp_id = parent_item.data(0, Qt.UserRole)
-
-        # Retrieve and return the actual object from the dictionary
         experiment = self.experiments.get(exp_id)
         return experiment
 
@@ -453,15 +478,17 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         """
         # Option A: Check by Index (Assuming Data Explorer is 0, SVD is 1)
         if index == 0:
+            self.plot_preprocessing_preview()
+        elif index == 1:
             if self.cbViewMode.currentIndex() == 0:
                 self.plot_current_data_3D()
             elif self.cbViewMode.currentIndex() == 1:
                 self.plot_current_data_spectrum()
             elif self.cbViewMode.currentIndex() == 2:
                 self.plot_current_data_traces()
-        elif index == 1:
-            self.plot_current_data_svd()
         elif index == 2:
+            self.plot_current_data_svd()
+        elif index == 3:
             self.plot_current_data_fit_preview()
 
     def export_plot(self):
@@ -561,6 +588,204 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         fig.savefig(path, dpi=600, bbox_inches='tight', pad_inches=0.05, transparent=False, facecolor='w',
                     edgecolor='w')
         plt.close(fig)
+
+    def on_preprocess_tool_changed(self, index):
+        """
+        Master switchboard for the Preprocessing tab.
+        Syncs the UI inputs, manages graph 2D/1D modes, and toggles interactive clicking.
+        """
+        # 1. Sync the Stacked Widget to show the correct input fields
+        self.stackedPreprocessTools.setCurrentIndex(index)
+        tool_name = self.cbPreprocessingTool.currentText()
+
+        # 2. Clean up interactive states (CRITICAL for preventing memory leaks/bugs)
+        if hasattr(self, '_chirp_click_cid') and self._chirp_click_cid is not None:
+            try:
+                # Unbind the click listener from the Matplotlib canvas
+                self.preprocessingMplWidget.canvas.figure.canvas.mpl_disconnect(self._chirp_click_cid)
+            except Exception:
+                pass
+            self._chirp_click_cid = None
+
+        # Redraw the canvas!
+        self.plot_preprocessing_preview()
+
+    def apply_preprocessing(self):
+        """Master router for applying preprocessing tools."""
+        experiment = self.get_experiment()
+        if not experiment:
+            self.statusBar().showMessage("Nincs kísérlet betöltve! (No experiment loaded)", 5000)
+            return
+
+        tool = self.cbPreprocessingTool.currentText()
+        prep = experiment.preprocessing
+
+        try:
+            # 1. Route to the correct getter and backend function
+            if tool == "Cut Time":
+                prep.cut_time(**self._get_cut_time_params())
+
+            elif tool == "Cut Wavelength":
+                prep.cut_wavelength(**self._get_cut_wave_params())
+
+            elif tool == "Shift Time":
+                prep.shift_time(**self._get_shift_time_params())
+
+            elif tool == "Baseline Subtraction":
+                prep.baseline_substraction(**self._get_baseline_sub_params())
+
+            elif tool == "Polynomial Baseline":
+                prep.subtract_polynomial_baseline(**self._get_poly_baseline_params())
+
+            elif tool == "Average Time":
+                prep.average_time(**self._get_average_time_params())
+
+            elif tool == "Derivate":
+                prep.derivate_data(**self._get_derivate_params())
+
+            elif tool == "Delete Points":
+                prep.delete_points(**self._get_delete_points_params())
+
+            elif tool == "Calibrate Wavelength":
+                prep.calibrate_wavelength(**self._get_calibrate_wave_params())
+
+            elif tool == "Chirp Correction (Polynomial)":
+                prep.chirp_correction_polynomial(**self._get_chirp_polynomial_params())
+                # Clear points after successful application to prevent accidental double-apply
+                self.leChirpPoints.clear()
+
+            elif tool == "Chirp Correction (Sellmeier)":
+                prep.chirp_correction_sellmeier(**self._get_chirp_sellmeier_params())
+
+            else:
+                raise ValueError(f"Unknown tool selected: {tool}")
+
+            # 2. Success! Update the GUI
+            self.statusBar().showMessage(f"Successfully applied: {tool}", 5000)
+
+            # Redraw the canvas (keep it in 2D mode if we are still on the Chirp page)
+            force_2d = tool.startswith("Chirp Correction")
+            self.plot_preprocessing_preview()
+
+            # Update the Action History List
+            self.update_history_list()
+            self._save_current_dataset_settings()
+        except (ValueError, ExperimentException) as e:
+            # Catch our custom input validation errors
+            self.statusBar().showMessage(f"Input Error: {str(e)}", 7000)
+        except Exception as e:
+            # Catch math errors from the backend (e.g., matrix dimension mismatches)
+            self.statusBar().showMessage(f"Math Error ({tool}): {str(e)}", 7000)
+
+    def update_history_list(self):
+        """Refreshes the QListWidget to match the backend history stack."""
+        self.listPreprocessHistory.clear()
+        experiment = self.get_experiment()
+        if not experiment:
+            return
+
+        for container in experiment.preprocessing.history_stack:
+            # container.action_name holds the clean string like "Cut Time"
+            self.listPreprocessHistory.addItem(container.action_name)
+
+    def undo_preprocessing(self):
+        """Quickly undoes the most recent preprocessing action."""
+        experiment = self.get_experiment()
+
+        # Check if there is actually anything to undo
+        if not experiment or not experiment.preprocessing.history_stack:
+            self.statusBar().showMessage("No actions to undo.", 3000)
+            return
+
+        try:
+            # 1. Call the backend undo function we wrote earlier
+            experiment.preprocessing.undo_last_preprocesing()
+
+            # 2. Refresh the UI to show the restored state
+            self.plot_preprocessing_preview()
+            self.update_history_list()
+            self.statusBar().showMessage("Last action undone successfully.", 4000)
+            self._save_current_dataset_settings()
+        except Exception as e:
+            self.statusBar().showMessage(f"Undo Error: {str(e)}", 5000)
+
+    def on_history_double_clicked(self, item):
+        experiment = self.get_experiment()
+        if not experiment:
+            return
+
+        # The row index of the QListWidget perfectly matches our history_stack index!
+        target_index = self.listPreprocessHistory.row(item)
+
+        try:
+            # 1. Call the backend restore function
+            experiment.preprocessing.restore_data(target_index)
+
+            # 2. Refresh the UI
+            self.plot_preprocessing_preview()
+            self.statusBar().showMessage(f"Restored data to state: {item.text()}", 4000)
+            self.update_history_list()
+            self._save_current_dataset_settings()
+        except Exception as e:
+            self.statusBar().showMessage(f"Restore Error: {str(e)}", 5000)
+
+    def plot_preprocessing_preview(self):
+        """
+        Context-aware graph updater. Decides the best visualization mode
+        (Trace, Spectra, or 2D) based on the currently selected preprocessing tool.
+        """
+        experiment = self.get_experiment()
+        # Ensure experiment and data actually exist before trying to plot
+        if not experiment or experiment.data is None:
+            return
+
+        tool_name = self.cbPreprocessingTool.currentText()
+
+        # 1. Define which tools strictly require a Spectral Plot (X-axis = Wavelength)
+        spectral_tools = [
+            "Cut Wavelength",
+            "Baseline Subtraction",
+            "Polynomial Baseline",
+            "Calibrate Wavelength"
+        ]
+
+        # 2. Handle the edge case: Delete Points can be either Time OR Wavelength!
+        if tool_name == "Delete Points":
+            if hasattr(self, 'cbDeleteDim') and self.cbDeleteDim.currentText().lower() == "wavelength":
+                spectral_tools.append("Delete Points")
+
+        try:
+            # --- MODE A: 2D COLORMAP ---
+            if tool_name.startswith("Chirp Correction"):
+                fig, ax = experiment.plot_2D(time_range=None, z_limit=None)
+
+            # --- MODE B: SPECTRAL PLOT ---
+            elif tool_name in spectral_tools:
+                fig, ax = experiment.plot_spectra(times='all')
+
+            # --- MODE C: TRACE PLOT (Default) ---
+            else:
+                # Tools like Cut Time, Shift Time, Average Time, Derivate
+                traces = experiment.wavelength.tolist()
+                fig, ax = experiment.plot_traces(traces=traces)
+
+            # Finally, push the smart figure to the UI
+            self.preprocessingMplWidget.update_figure(fig)
+            self._chirp_click_cid = None
+            self._active_span_selector = None
+
+            if tool_name == "Chirp Correction (Polynomial)":
+                self._chirp_click_cid = self.enable_2d_point_picking(fig=fig, ax=ax, target_lineedit=self.leChirpPoints)
+            elif tool_name == "Cut Time":
+                self._active_span_selector = self.enable_range_picking(ax=ax, le_min=self.leCutTimeMin, le_max=self.leCutTimeMax)
+            elif tool_name == "Cut Wavelength":
+                self._active_span_selector = self.enable_range_picking(ax=ax, le_min=self.leCutWaveMin, le_max=self.leCutWaveMax)
+            plt.close(fig)
+
+        except Exception as e:
+            # Catch errors silently so the GUI doesn't crash if plotting fails
+            print(f"Could not generate preview for {tool_name}: {e}")
+            self.statusBar().showMessage(f"Preview Error: {str(e)}", 4000)
 
     def reset_3d_camera(self):
         """
@@ -708,10 +933,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             except ValueError:
                 print("Warning: Nem megfelelő formátum (Invalid format). Falling back to 'select'.")
                 traces_val = "auto"
-        legend_text = self.cbLegendTrace.currentText()
-        if legend_text == "Mindig látható":
+        legend_text = self.cbLegendTrace.currentIndex()
+        if legend_text == 1:
             legend_val = True
-        elif legend_text == "Elrejtve":
+        elif legend_text == 2:
             legend_val = False
         else:
             legend_val = 'auto'
@@ -808,6 +1033,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
         # Trigger the actual redraw!
         self.fittingPreviewMplWidget.update_figure(fig)
+        plt.close(fig)
         self._save_current_dataset_settings()
 
     def get_fit_parameters(self):
@@ -913,7 +1139,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         Gathers parameters, slices the data, initializes the mathematical model,
         and runs the Levenberg-Marquardt algorithm with Status Bar feedback.
         """
-        self.statusBar().showMessage("Paraméterek ellenőrzése...")
+        self.statusBar().showMessage("Checking parameters...")
 
         # 1. Grab parameters and run the Bouncer
         params = self.get_fit_parameters()
@@ -935,10 +1161,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             print(f"Auto-generált kezdeti tau értékek: {initial_taus}")
 
         # 2. Lock the UI and update Status Bar
-        self.btnRunFit.setText("Illesztés Megszakítása")
+        self.btnRunFit.setText("Cancel Fitting")
         self.btnRunFit.setStyleSheet("background-color: #d9534f; color: white; font-weight: bold;")  # Make it Red!
         self.setCursor(Qt.CursorShape.WaitCursor)
-        self.statusBar().showMessage("Adatok előkészítése és szeletelése...")
+        self.statusBar().showMessage("Data preparation and slicing...")
         QtWidgets.QApplication.processEvents()  # Force the UI to draw the message!
 
         try:
@@ -959,11 +1185,11 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # ---------------------------------------------------------
             # 4. EXECUTE THE MATH
             # ---------------------------------------------------------
-            self.statusBar().showMessage("Levenberg-Marquardt illesztés folyamatban... Kérem várjon!")
+            self.statusBar().showMessage("Levenberg-Marquardt fitting in progress... Please wait!")
             QtWidgets.QApplication.processEvents()  # Force the UI to update again before the heavy freeze!
             sys.stdout = self.stdout_redirector
             self.textFitLog.clear()
-            self.textFitLog.append("--- Illesztés Indítása ---")
+            self.textFitLog.append("--- Start Fitting ---")
 
             if fit_mode == 0:
                 experiment.fitting.initialize_exp_params(irf_mu, irf_w, *initial_taus, tau_inf=tau_inf)
@@ -977,16 +1203,16 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             sys.stdout = sys.__stdout__
             if self._fit_aborted:
-                self.statusBar().showMessage("Illesztés megszakítva.", 5000)
+                self.statusBar().showMessage("Fitting interrupted.", 5000)
                 return  # STOP HERE! Don't show the success message or add it to the tree.
 
-            self.textFitLog.append("--- Illesztés Befejezve ---")
+            self.textFitLog.append("--- Fitting Complete ---")
             # ---------------------------------------------------------
             # 5. POST-FIT SUCCESS
             # ---------------------------------------------------------
 
             # Show success message for exactly 5000 milliseconds (5 seconds)
-            self.statusBar().showMessage("Illesztés sikeresen befejeződött!", 5000)
+            self.statusBar().showMessage("The fitting has been successfully completed!", 5000)
             self._save_current_dataset_settings()
             self._add_fit_to_tree()
         except Exception as e:
@@ -994,18 +1220,18 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # 6. POST-FIT FAILURE
             # ---------------------------------------------------------
             self.setCursor(Qt.CursorShape.ArrowCursor)
-            self.statusBar().showMessage("Hiba az illesztés során!", 5000)
+            self.statusBar().showMessage("Error during fitting!", 5000)
             sys.stdout = sys.__stdout__
             QtWidgets.QMessageBox.critical(
                 self,
-                "Matematikai Hiba",
-                f"Az illesztési algoritmus hibába ütközött:\n\n{str(e)}\n\n"
-                "Javaslat: Próbálja meg módosítani a kezdeti értékeket (Tau) vagy a kizárt tartományokat."
+                "Mathematical Error",
+                f"The fitting algorithm encountered an error:\n\n{str(e)}\n\n"
+                "Suggestion: Try adjusting the initial values (Tau) or the excluded ranges."
             )
         finally:
             # 6. TRANSFORM BACK TO "RUN" (Guaranteed to execute!)
             self._is_fitting = False
-            self.btnRunFit.setText("Illesztés Futtatása")
+            self.btnRunFit.setText("Run Fitting")
             self.btnRunFit.setStyleSheet("")  # Clears the custom color
             self.btnRunFit.setEnabled(True)
             self.setCursor(Qt.CursorShape.ArrowCursor)
@@ -1044,12 +1270,12 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             if self.rbGlobalFitSvd.isChecked():
                 mode_str = "SVD"
             elif self.rbGlobalFitTraces.isChecked():
-                mode_str = "Nyomok"
+                mode_str = "Trace"
             elif self.rbGlobalFitRegion.isChecked():
-                mode_str = "Tartomány"
+                mode_str = "Region"
             else:
-                mode_str = "Globális"
-            node_text = f"Illesztés {fit_number}: {exp_no} exp ({mode_str})"
+                mode_str = "Global"
+            node_text = f"Fit {fit_number}: {exp_no} exp ({mode_str})"
 
         elif fit_mode == 1:  # Single Fit
             fit_dict = experiment.fitting.fit_records.single_fits
@@ -1064,7 +1290,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             latest_fit = fit_dict[fit_number]
 
             exp_no = latest_fit.details.get('exp_no', '?')
-            node_text = f"Illesztés {fit_number}: {exp_no} exp (Egyetlen nyom)"
+            node_text = f"Fit {fit_number}: {exp_no} exp (Single Trace)"
 
         fit_item = QtWidgets.QTreeWidgetItem([node_text])
 
@@ -1093,8 +1319,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             experiment.fitting._active_minimizer.stop_fit()
 
             # Print a warning to our custom text log
-            self.textFitLog.append("\n⚠️ --- ILLESZTÉS MEGSZAKÍTVA A FELHASZNÁLÓ ÁLTAL --- ⚠️")
-            self.btnRunFit.setText("Leállítás folyamatban...")
+            self.textFitLog.append("\n⚠️ --- FITTING INTERRUPTED BY THE USER --- ⚠️")
+            self.btnRunFit.setText("Shutting down...")
             self.btnRunFit.setStyleSheet("background-color: #f0ad4e; color: black;")  # Warning yellow
             self.btnRunFit.setEnabled(False)
 
@@ -1144,7 +1370,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     if matches:
                         trace_selection = [float(x) for x in matches]
                     else:
-                        self.statusBar().showMessage("Nem található érvényes szám a kiválasztásban!", 5000)
+                        self.statusBar().showMessage("No valid numbers were found in the selection!", 5000)
                         trace_selection = None  # Fallback to showing everything
 
                 # Check if they wanted residues based on the combobox index
@@ -1159,9 +1385,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             # Update the canvas!
             fig.tight_layout()
             self.globalMplWidget.update_figure(fig)
+            plt.close(fig)
 
         except Exception as e:
-            self._clear_plot_with_message(self.globalMplWidget, f"Hiba a rajzolás során:\n{str(e)}")
+            self._clear_plot_with_message(self.globalMplWidget, f"Error during plotting:\n{str(e)}")
 
         # Keep the stdout hijacker to fill the QTextBrowser
         self._update_fit_text_report(experiment, fit_number, self.textGlobalReport)
@@ -1189,9 +1416,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             fig.tight_layout()
             self.singleMplWidget.update_figure(fig)
+            plt.close(fig)
 
         except Exception as e:
-            self._clear_plot_with_message(self.singleMplWidget, f"Hiba a rajzolás során:\n{str(e)}")
+            self._clear_plot_with_message(self.singleMplWidget, f"Error during plotting:\n{str(e)}")
 
     def _update_fit_text_report(self, experiment, fit_number, text_browser):
         """Hijacks stdout to capture the backend's print_fit_results text."""
@@ -1203,7 +1431,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
             sys.stdout = captured_output
             experiment.fitting.print_fit_results(fit_number)
         except Exception as e:
-            print(f"Hiba a jelentés generálásakor: {e}", file=original_stdout)
+            print(f"Error while generating the report: {e}", file=original_stdout)
         finally:
             # ALWAYS restore standard output so we don't break PyCharm/VSCode console!
             sys.stdout = original_stdout
@@ -1225,7 +1453,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         print(self.treeExperiment.currentItem())
         if self.treeExperiment.currentItem() is None:
             # If no data is loaded, just clear the plot and stop here.
-            self._clear_plot_with_message(self.mplWidget, "Nincs betöltött kísérlet.\nKérjük, válasszon egyet a Projekt Felfedezőből.")
+            self._clear_plot_with_message(self.mplWidget, "No experiments have been loaded.\nPlease select one from Project Explorer.")
             return
 
         if index == 0:
@@ -1299,55 +1527,36 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
     def enable_interactive_features(self, fig, ax, x_data, target_lineedit=None):
         """
-        Provides a fast blitting crosshair, floating coordinates, and click-to-save functionality.
+        Provides click-to-save functionality for adding/removing vertical markers.
+        (Coordinate tracking and crosshairs are natively handled by MplWidget).
         """
-
-        # 1. The Fast Crosshair (Solves Problem 1 & 2)
-        self._cursor = Cursor(ax, useblit=True, color='gray', linewidth=1, linestyle='--')
-
-        # 2. The Custom Floating Coordinate Box (Solves Problem 3)
-        coord_box = ax.annotate(
-            "", xy=(1, 1), xycoords='axes fraction', xytext=(-10, -10), textcoords='offset points',
-            ha='right', va='top', bbox=dict(boxstyle='round,pad=0.4', fc='white', alpha=0.85, ec='gray'),
-            fontsize=10, zorder=200
-        )
-        coord_box.set_visible(False)
-
-        drawn_lines = []
+        # 1. Store lines on the instance to prevent orphaned lines across replots
+        if not hasattr(self, '_drawn_interactive_lines'):
+            self._drawn_interactive_lines = []
 
         def sync_red_lines(vals):
-            for line in drawn_lines:
+            """Clears existing vertical lines and redraws them based on the list."""
+            for line in self._drawn_interactive_lines:
                 try:
                     line.remove()
                 except ValueError:
                     pass
-            drawn_lines.clear()
+            self._drawn_interactive_lines.clear()
 
             for val in vals:
                 line = ax.axvline(val, color='red', linestyle=':', alpha=0.6, zorder=1)
-                drawn_lines.append(line)
+                self._drawn_interactive_lines.append(line)
 
             fig.canvas.draw_idle()
 
-        def on_mouse_move(event):
-            if event.inaxes != ax:
-                if coord_box.get_visible():
-                    coord_box.set_visible(False)
-                    ax.figure.canvas.draw_idle()
-                return
-            x_label = ax.get_xlabel()
-            y_label = ax.get_ylabel()
-            coord_box.set_text(f"{x_label}: {event.xdata:.1f} | {y_label}: {event.ydata:.5f}")
-            if not coord_box.get_visible():
-                coord_box.set_visible(True)
-            ax.figure.canvas.draw_idle()
-
         def on_click(event):
+            """Handles left-click to add and right-click to remove points."""
             if event.inaxes != ax or target_lineedit is None:
                 return
             if event.button not in [1, 3]:
                 return
 
+            # Parse current values dynamically from the LineEdit
             current_text = target_lineedit.text()
             current_vals = [float(x.strip()) for x in current_text.replace(';', ',').split(',') if x.strip()]
 
@@ -1369,6 +1578,7 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                 closest_idx = np.argmin(np.abs(current_vals_array - event.xdata))
                 closest_val = current_vals[closest_idx]
 
+                # Calculate distance in pixels to make clicking forgiving regardless of axis scale
                 click_px = ax.transData.transform((event.xdata, 0))
                 line_px = ax.transData.transform((closest_val, 0))
                 pixel_distance = abs(click_px[0] - line_px[0])
@@ -1378,13 +1588,118 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
                     target_lineedit.setText(", ".join([f"{v:.1f}" for v in current_vals]))
                     sync_red_lines(current_vals)
 
-        self._cid_move = fig.canvas.mpl_connect('motion_notify_event', on_mouse_move)
+        # 2. Bind ONLY the click event (motion event is removed)
         self._cid_click = fig.canvas.mpl_connect('button_press_event', on_click)
 
-        if target_lineedit is not None:
+        # 3. Quality of Life: Sync lines immediately if the LineEdit already has data on load
+        if target_lineedit:
             initial_text = target_lineedit.text()
             initial_vals = [float(x.strip()) for x in initial_text.replace(';', ',').split(',') if x.strip()]
-            sync_red_lines(initial_vals)
+            if initial_vals:
+                sync_red_lines(initial_vals)
+
+    def enable_2d_point_picking(self, fig, ax, target_lineedit=None):
+        """
+        Allows the user to click on a 2D Colormap to save (X, Y) coordinate pairs.
+        Used specifically for Polynomial Chirp Correction.
+        """
+        # Store points as tuples: [(wave1, time1), (wave2, time2)]
+        self._chirp_2d_points = []
+
+        # Store the scatter plot object so we can update it
+        if hasattr(self, '_drawn_scatter_pts') and self._drawn_scatter_pts is not None:
+            try:
+                self._drawn_scatter_pts.remove()
+            except ValueError:
+                pass
+        self._drawn_scatter_pts = None
+
+        def sync_scatter():
+            """Clears and redraws the red dots."""
+            if self._drawn_scatter_pts is not None:
+                try:
+                    self._drawn_scatter_pts.remove()
+                except ValueError:
+                    pass
+
+            if self._chirp_2d_points:
+                xs = [p[0] for p in self._chirp_2d_points]
+                ys = [p[1] for p in self._chirp_2d_points]
+                # Draw red dots with black edges
+                self._drawn_scatter_pts = ax.scatter(xs, ys, color='red', edgecolors='black', s=40, zorder=10)
+            else:
+                self._drawn_scatter_pts = None
+
+            fig.canvas.draw_idle()
+
+        def on_click(event):
+            if event.inaxes != ax or target_lineedit is None:
+                return
+
+            # Prevent dropping points if the user is currently using the Toolbar Zoom/Pan tools!
+            toolbar = getattr(fig.canvas.manager, 'toolbar', None) if fig.canvas.manager else None
+            if toolbar and toolbar.mode != '':
+                return
+
+            click_x, click_y = event.xdata, event.ydata
+
+            if event.button == 1:  # LEFT CLICK -> ADD POINT
+                self._chirp_2d_points.append((click_x, click_y))
+                self._chirp_2d_points.sort(key=lambda p: p[0])  # Sort by wavelength
+                target_lineedit.setText(", ".join([f"{x:.1f}:{y:.3f}" for x, y in self._chirp_2d_points]))
+                sync_scatter()
+
+            elif event.button == 3:  # RIGHT CLICK -> REMOVE NEAREST POINT
+                if not self._chirp_2d_points:
+                    return
+
+                # Calculate distance in pixels to make clicking forgiving
+                click_px = ax.transData.transform((click_x, click_y))
+                min_dist = float('inf')
+                closest_idx = -1
+
+                for i, (px, py) in enumerate(self._chirp_2d_points):
+                    pt_px = ax.transData.transform((px, py))
+                    dist = np.hypot(click_px[0] - pt_px[0], click_px[1] - pt_px[1])
+                    if dist < min_dist:
+                        min_dist, closest_idx = dist, i
+
+                if min_dist <= 15.0 and closest_idx != -1:
+                    self._chirp_2d_points.pop(closest_idx)
+                    target_lineedit.setText(", ".join([f"{x:.1f}:{y:.3f}" for x, y in self._chirp_2d_points]))
+                    sync_scatter()
+
+        # Connect the event and return the ID so the switchboard can turn it off later!
+        cid = fig.canvas.mpl_connect('button_press_event', on_click)
+        return cid
+
+    def enable_range_picking(self, ax, le_min, le_max):
+        """
+        Enables a click-and-drag shaded box to select a minimum and maximum range.
+        Updates the target QLineEdits instantly.
+        """
+
+        def on_select(vmin, vmax):
+            # Matplotlib automatically calculates which end is min and max
+            # We just format them and shove them into your Qt text boxes!
+            if le_min:
+                le_min.setText(f"{vmin:.2f}")
+            if le_max:
+                le_max.setText(f"{vmax:.2f}")
+
+        # Create the SpanSelector
+        span = SpanSelector(
+            ax,
+            on_select,
+            direction='horizontal',  # We only care about selecting the X-axis (Time/Wave)
+            useblit=True,
+            props=dict(alpha=0.2, facecolor='red'),  # Draws a light red transparent box
+            interactive=True  # Gives the user grab-handles to resize the box!
+        )
+
+        # We MUST return the span object and store it,
+        # otherwise Python's garbage collector will instantly delete it!
+        return span
 
     def validate_pre_fit(self, params):
         """
@@ -1411,10 +1726,10 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         if initial_taus is not None:
             if len(initial_taus) != exp_no:
                 self._show_validation_error(
-                    "Érvénytelen Tau paraméterek",
-                    f"A megadott kezdeti tau értékek száma ({len(initial_taus)}) nem egyezik "
-                    f"a kért exponenciálisok számával ({exp_no}).\n\n"
-                    "Kérjük, pontosítsa a listát, vagy hagyja teljesen üresen az automatikus generáláshoz."
+                    "Invalid Tau parameters",
+                    f"The number of initial tau values provided ({len(initial_taus)}) does not match "
+                    f"the number of requested exponentials ({exp_no}).\n\n"
+                    "Please refine the list or leave it completely empty for automatic generation."
                 )
                 return False
 
@@ -1428,24 +1743,24 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             if data_sel_type == 'traces' and not traces_list:
                 self._show_validation_error(
-                    "Hiányzó nyomok",
-                    "Nyomok (Traces) mód van kiválasztva, de nem adott meg hullámhosszakat.\n"
-                    "Kérjük, adjon meg értékeket (pl. 450, 500)."
+                    "Missing traces",
+                    "The 'Traces' mode is selected, but no wavelengths have been specified.\n"
+                    "Please enter values (e.g., 450, 500)."
                 )
                 return False
 
             if data_sel_type == 'region':
                 if region_min == region_max:
                     self._show_validation_error(
-                        "Érvénytelen tartomány",
-                        "A tartomány kezdő és végpontja nem lehet azonos."
+                        "Invalid range",
+                        "The start and end points of the range cannot be the same."
                     )
                     return False
                 # Check if the region completely misses the actual dataset
                 if region_max < min_wave or region_min > max_wave:
                     self._show_validation_error(
-                        "Tartomány hiba",
-                        f"A megadott tartomány teljesen kívül esik az adatok hullámhossz-tartományán "
+                        "Range error",
+                        "The specified range is completely outside the wavelength range of the data"
                         f"({min_wave:.1f} - {max_wave:.1f} nm)."
                     )
                     return False
@@ -1453,8 +1768,8 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
         elif fit_mode == 1:  # SINGLE FIT
             if single_wave < min_wave or single_wave > max_wave:
                 self._show_validation_error(
-                    "Hullámhossz hiba",
-                    f"A megadott hullámhossz kívül esik az adatok tartományán "
+                    "Wavelength error",
+                    "The specified wavelength is outside the data range"
                     f"({min_wave:.1f} - {max_wave:.1f} nm)."
                 )
                 return False
@@ -1718,3 +2033,141 @@ class MainWindow(QtWidgets.QMainWindow, Ui_MainWindow):
 
             # Trigger exactly ONE update to render the correct view!
         self.on_view_mode_changed()
+
+    # ==========================================
+    # PREPROCESSING INPUT GETTERS
+    # ==========================================
+    def _get_cut_time_params(self):
+        min_str, max_str = self.leCutTimeMin.text().strip(), self.leCutTimeMax.text().strip()
+        mini = float(min_str) if min_str else None
+        maxi = float(max_str) if max_str else None
+        return {'mini': mini, 'maxi': maxi}
+
+    def _get_cut_wave_params(self):
+        min_str, max_str = self.leCutWaveMin.text().strip(), self.leCutWaveMax.text().strip()
+        mini = float(min_str) if min_str else None
+        maxi = float(max_str) if max_str else None
+        innerdata = None
+        if mini is not None and maxi is not None:
+            innerdata = self.cbCutWaveInner.currentText().strip().lower()
+        return {'mini': mini, 'maxi': maxi, 'innerdata': innerdata}
+
+    def _get_shift_time_params(self):
+        val_str = self.leShiftTime.text().strip()
+        if not val_str: raise ValueError("Shift value cannot be empty.")
+        return {'value': float(val_str)}
+
+    def _get_baseline_sub_params(self):
+        val_str = self.leBaseSpec.text().strip()
+        if not val_str:
+            raise ValueError("Baseline spectra cannot be empty.")
+
+        # Parse the string into a list of integers
+        try:
+            parts = [int(x.strip()) for x in val_str.split(',') if x.strip()]
+        except ValueError:
+            raise ValueError("Please enter whole numbers only (e.g., '5' or '2, 5').")
+
+        if len(parts) == 1:
+            number_spec = parts[0]  # User typed "5"
+        elif len(parts) == 2:
+            number_spec = parts  # User typed "2, 5"
+        else:
+            raise ValueError("Enter either a single number or two numbers separated by a comma.")
+
+        return {
+            'number_spec': number_spec,
+            'only_one': self.chkBaseOnlyOne.isChecked()
+        }
+
+    def _get_poly_baseline_params(self):
+        pts_str = self.lePolyBasePoints.text().strip()
+        if not pts_str: raise ValueError("Must provide at least one zero point.")
+        points = [float(x.strip()) for x in pts_str.split(',')]
+        return {'points': points, 'order': self.sbPolyBaseOrder.value()}
+
+    def _get_average_time_params(self):
+        start_str = self.leAvgTimeStart.text().strip()
+        step_str = self.leAvgTimeStep.text().strip()
+        if not start_str or not step_str: raise ValueError("Start and Step cannot be empty.")
+        return {
+            'starting_point': float(start_str),
+            'step': float(step_str),
+            'method': self.cbAvgTimeMethod.currentText().lower(),
+            'grid_dense': self.sbAvgTimeGrid.value()
+        }
+
+    def _get_derivate_params(self):
+        window = self.sbDerivWindow.value()
+        if window % 2 == 0: raise ValueError("Window length must be an odd number.")
+        return {
+            'window_length': window,
+            'polyorder': self.sbDerivPoly.value(),
+            'deriv': self.sbDerivOrder.value()
+        }
+
+    def _get_delete_points_params(self):
+        pts_str = self.leDeletePoints.text().strip()
+        if not pts_str: raise ValueError("No points provided to delete.")
+        points = [float(x.strip()) for x in pts_str.split(',')]
+        return {'points': points, 'dimension': self.cbDeleteDim.currentText().lower()}
+
+    def _get_calibrate_wave_params(self):
+        pix_str = self.leCalibPixels.text().strip()
+        wave_str = self.leCalibWaves.text().strip()
+
+        if not pix_str or not wave_str:
+            raise ValueError("Both Pixels and True Waves are required.")
+
+        def parse_input(val_str):
+            """Smart parser that handles '10, 20', '1-500', or '[300 - 800]'."""
+            clean_str = val_str.replace('[', '').replace(']', '').strip()
+
+            # 1. If there's a comma, treat it as a standard list of points
+            if ',' in clean_str:
+                return [float(x.strip()) for x in clean_str.split(',') if x.strip()]
+
+            # 2. Otherwise, look for the raw numbers (handles ranges like '1-500' or '-10 to 500')
+            # This regex perfectly extracts positive and negative floats
+            numbers = re.findall(r"-?\d+\.?\d*", clean_str)
+
+            if len(numbers) >= 2:
+                return [float(x) for x in numbers]
+
+            raise ValueError(f"Could not understand the input format: '{val_str}'")
+
+        # Parse both inputs
+        pixels = parse_input(pix_str)
+        waves = parse_input(wave_str)
+
+        if len(pixels) != len(waves):
+            raise ValueError("Number of pixels must match number of waves.")
+
+        order = self.sbCalibOrder.value()
+
+        # SILENT SAFETY NET:
+        # If they provided a 2-point range, force a linear fit (order=1) to prevent a backend crash.
+        if len(pixels) == 2 and order > 1:
+            self.sbCalibOrder.setValue(1)
+            order = 1
+
+        return {'pixels': pixels, 'wavelength': waves, 'order': order}
+
+    def _get_chirp_polynomial_params(self):
+        pts_str = self.leChirpPoints.text().strip()
+        if not pts_str: raise ValueError("Please click on the graph to pick points first.")
+        # Parses "400.0:2.1, 450.0:2.5"
+        pairs = [p.split(':') for p in pts_str.split(',') if ':' in p]
+        x_pts = [float(p[0]) for p in pairs]
+        y_pts = [float(p[1]) for p in pairs]
+        if len(x_pts) < 2: raise ValueError("Need at least 2 points for a polynomial fit.")
+        return {'x_points': x_pts, 'y_points': y_pts}
+
+    def _get_chirp_sellmeier_params(self):
+        return {
+            'excitation': self.dsbChirpExc.value(),
+            'bk7': self.dsbChirpBK7.value(),
+            'sio2': self.dsbChirpSiO2.value(),
+            'caf2': self.dsbChirpCaF2.value(),
+            'offset': self.dsbChirpOffset.value()
+        }

@@ -371,6 +371,76 @@ class ExploreData(PlotSVD):
 
         return fig, ax
 
+    @use_style
+    def plot_2D(self, cmap=None, figsize=(6, 5), time_range=None, wave_range=None, z_limit=None):
+        """
+        Plots a 2D colormap (heatmap) of the data set. Highly optimized for
+        identifying dispersion (Chirp) curves around time zero.
+
+        Parameters
+        ----------
+        cmap: str or None
+            Name of matplotlib color map. If None the attribute color_map will be used.
+        figsize: tuple
+            Size of the figure (default (6, 5)).
+        time_range: list of length 2 or None
+            [min_time, max_time]. Extremely useful for zooming into the time-zero
+            region for Chirp Correction without cutting the actual data.
+        wave_range: list of length 2 or None
+            [min_wave, max_wave]. Zoom into a specific wavelength region.
+        z_limit: tuple of length 2, float, or None
+            Used to adjust the contrast by clipping intense signals.
+            If float: scales symmetrically (-z_limit, +z_limit).
+            If tuple: uses strict (vmin, vmax).
+
+        Returns
+        ----------
+        Figure and axes matplotlib objects
+        """
+        cmap = self._get_cmap(cmap)
+
+        # 1. Setup Base Data
+        time_vec = self.x
+        wave_vec = self._get_wavelength()
+        data_matrix = self.data
+
+        # 2. Apply Time limits (Slicing the matrix for better visualization)
+        if time_range is not None:
+            time_range = sorted(time_range)
+            min_t = np.argmin(np.abs(time_vec - time_range[0]))
+            max_t = np.argmin(np.abs(time_vec - time_range[1]))
+            time_vec = time_vec[min_t:max_t + 1]
+            data_matrix = data_matrix[min_t:max_t + 1, :]
+
+        # 3. Apply Wavelength limits (Slicing)
+        if wave_range is not None:
+            wave_range = sorted(wave_range)
+            min_w = np.argmin(np.abs(wave_vec - wave_range[0]))
+            max_w = np.argmin(np.abs(wave_vec - wave_range[1]))
+            wave_vec = wave_vec[min_w:max_w + 1]
+            data_matrix = data_matrix[:, min_w:max_w + 1]
+
+        # 4. Handle Z limits (Contrast Saturation)
+        vmin, vmax = None, None
+        if z_limit is not None:
+            if isinstance(z_limit, (int, float)):
+                vmin, vmax = -abs(z_limit), abs(z_limit)
+            elif isinstance(z_limit, (list, tuple)) and len(z_limit) == 2:
+                vmin, vmax = z_limit[0], z_limit[1]
+
+        # 5. Create Plot
+        fig, ax = plt.subplots(figsize=figsize)
+        mesh = ax.pcolormesh(wave_vec, time_vec, data_matrix,
+                             cmap=cmap, shading='auto',
+                             vmin=vmin, vmax=vmax)
+
+        # 6. Formatting (Using your existing helpers)
+        fig.colorbar(mesh, ax=ax, label=r'$\Delta$A')
+        ax.set_xlabel(self._get_wave_label())
+        ax.set_ylabel(f'Time ({self._units["time_unit"]})')
+
+        return fig, ax
+
     def select_traces(self, points=10, average=1, avoid_regions=None):
         """
         Method to select traces from the data attribute and defines a subset

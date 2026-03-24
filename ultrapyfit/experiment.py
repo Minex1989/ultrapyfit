@@ -80,6 +80,7 @@ class SaveExperiment:
         self.save_object['fits'] = self.experiment.fitting.fit_records
         self.save_object['actions'] = self.experiment._action_records
         self.save_object['datas'] = self.experiment.preprocessing.data_sets
+        self.save_object['history_stack'] = self.experiment.preprocessing.history_stack
         self.save_object['data'] = self.experiment.data
         self.save_object['x'] = self.experiment.x
         self.save_object['wavelength'] = self.experiment.wavelength
@@ -317,6 +318,7 @@ class Experiment(ExploreData):
                 experiment.fitting._fits = object_load['fits'].global_fits
                 experiment._action_records = object_load['actions']
                 experiment.preprocessing.data_sets = object_load['datas']
+                experiment.preprocessing.history_stack = object_load.get('history_stack', [])
                 experiment._units = object_load['detail']['units']
                 gvd = object_load['detail']['GVD']
                 experiment.preprocessing.GVD_corrected = gvd
@@ -447,20 +449,17 @@ class Experiment(ExploreData):
         """
         def __init__(self, experiment, report=None):
             self._experiment = experiment
-            # self.x = x
-            # self.data = data
-            # self.wavelength = wavelength
             if report is None:
                 self.report = LabBook(name="Pre-processing")
             else:
                 self.report = report
             self._chirp_corrector = None
-            self._last_data_sets = None
             self.GVD_corrected = False
             self.data_sets = UnvariableContainer()
             self.data_sets.original_data = UnvariableContainer(time=self._experiment.x,
                                                                data=self._experiment.data,
                                                                wavelength=self._experiment.wavelength)
+            self.history_stack = []
             self._final_initialization()
 
         def _final_initialization(self):
@@ -486,6 +485,41 @@ class Experiment(ExploreData):
         def chirp_corrected(self, value):
             if type(value) == bool:
                 self.GVD_corrected = value
+
+        def chirp_correction_sellmeier(self, excitation, caf2, sio2, bk7, offset):
+            """Headless Sellmeier correction for PySide6 GUI."""
+            self._add_to_data_set("before_chirp_correction")
+
+            # Setup the corrector
+            self._chirp_corrector = EstimationGVDSellmeier(
+                self._experiment.x, self._experiment.data, self._experiment.wavelength, excitation
+            )
+            # Run the pure math (verify=False prevents the popup window!)
+            self._chirp_corrector.estimate_GVD(CaF2=caf2, SiO2=sio2, BK7=bk7, offset=offset, verify=False)
+
+            # Apply to experiment
+            self._experiment.data = self._chirp_corrector.corrected_data
+            self.report.__setattr__('chrip_correction', self._chirp_corrector.estimation_params.details, True)
+            self._experiment._add_action("correct chirp sellmeier", True)
+            self.GVD_corrected = True
+
+        def chirp_correction_polynomial(self, x_points, y_points):
+            """Headless Polynomial correction for PySide6 GUI."""
+            self._add_to_data_set("before_chirp_correction")
+
+            # Setup the corrector
+            self._chirp_corrector = EstimationGVDPolynom(
+                self._experiment.x, self._experiment.data, self._experiment.wavelength
+            )
+            # Run the pure math using the points harvested from the GUI
+            self._chirp_corrector.fitPolGVD(x_points, y_points)
+            self._chirp_corrector.correct_chrip(verify=False)
+
+            # Apply to experiment
+            self._experiment.data = self._chirp_corrector.corrected_data
+            self.report.__setattr__('chrip_correction', self._chirp_corrector.estimation_params.details, True)
+            self._experiment._add_action("correct chirp polynomial", True)
+            self.GVD_corrected = True
 
         def chirp_correction_graphically(self, method, excitation=None):
             """
@@ -837,86 +871,72 @@ class Experiment(ExploreData):
             self._experiment.x = self._experiment.x - value
             self._experiment._add_action("shift time")
 
-        def restore_data(self, action: str):
+        def restore_data(self, target_index: int):
             """
-            Restore the data to a point previous to a preprocessing action
-            actions should be the name of the function.
-            e.g.: "baseline substraction" or "baseline_substraction" are both 
-            valid
+            Restores the data to the state stored at target_index, then discards
+            the undone steps from the stack.
+            """
+            if not isinstance(target_index, int) or target_index < 0 or target_index >= len(self.history_stack):
+                raise ExperimentException(f"Invalid history index: {target_index}")
 
-            Parameters
-            ----------
-            action:
-                Possible actions:
-                    original_data,
-                    baseline_substraction,
-                    average_time,
-                    cut_time,
-                    cut_wavelength,
-                    delete_points,
-                    derivate_data,
-                    shift_time,
-                    subtract_polynomial_baseline,
-                    correct_chirp/correct_GVD,
-                    calibrate_wavelength,
-            """
-            action = '_'.join(action.split(' '))
-            key = [i for i in self.data_sets.__dict__.keys() if action in i]
-            msg = f'data has not been {action}'
-            if len(key) == 1:
-                key = key[0]
-            elif len(key) >= 1:
-                msg = f'"{action}" is ambiguous specify "cut time" or "cut wave"'
-                key = 'Not_an_action'
-            else:
-                key = 'Not_an_action'
-            if hasattr(self.data_sets, key):
-                container = getattr(self.data_sets, key)
-                self._experiment.data = container.data
-                self._experiment.x = container.x
-                self._experiment.wavelength = container.wavelength
-                self._experiment.selected_traces = container.data
-                self._experiment.selected_wavelength = container.wavelength
-                keys = [i for i in self.report.__dict__.keys()]
-                for i in keys:
-                    if i not in container.report.__dict__.keys():
-                        delattr(self.report, i)
-                for i in container.report.__dict__.keys():
-                    if i not in self.report.__dict__.keys():
-                        atr = getattr(container.report, i)
-                        setattr(self.report, i, atr)
-                self.report._last_action = None
-                write_action = ' '.join(key.split('_'))
-                self._experiment._add_action(f'restore {write_action}')
-            else:
-                raise ExperimentException(msg)
+            # Grab the safe snapshot
+            container = self.history_stack[target_index]
+
+            # 1. Restore matrices
+            self._experiment.data = container.data.copy() if container.data is not None else None
+            self._experiment.x = container.x.copy() if container.x is not None else None
+            self._experiment.wavelength = container.wavelength.copy() if container.wavelength is not None else None
+            self._experiment.selected_traces = self._experiment.data
+            self._experiment.selected_wavelength = self._experiment.wavelength
+
+            # 2. Safely sync the LabBook (Keeping your original logic!)
+            keys = [i for i in self.report.__dict__.keys()]
+            for i in keys:
+                if i not in container.report.__dict__.keys() and i != '_last_action':
+                    delattr(self.report, i)
+            for i in container.report.__dict__.keys():
+                if i not in self.report.__dict__.keys():
+                    atr = getattr(container.report, i)
+                    setattr(self.report, i, atr)
+
+            self.report._last_action = None
+            self._experiment._add_action(f'restore {container.action_name}')
+
+            # 3. Destroy the discarded timeline
+            self.history_stack = self.history_stack[:target_index]
 
         def undo_last_preprocesing(self):
             """
-            Undo the last preprocesing action perform to the data
+            Quick helper to undo the very last action on the stack.
             """
-            if self.report._last_action is None:
-                print('No preprocesing action run or already undo last action')
-            else:
-                key = self.report._last_action
-                self.restore_data(key)
-                self.report._last_action = None
+            if not self.history_stack:
+                print('No preprocessing actions in history to undo.')
+                return
+
+            # Pop the most recent action off the top of the stack
+            last_index = len(self.history_stack) - 1
+            self.restore_data(last_index)
 
         def _add_to_data_set(self, key):
             """
-            add data to data sets after a preprocesing action
+            Appends a snapshot of the data to the chronological stack BEFORE math is applied.
             """
-            if hasattr(self.data_sets, key):
-                pass
-            else:
-                report = copy.copy(self.report)
-                container = UnvariableContainer(x=self._experiment.x,
-                                                data=self._experiment.data,
-                                                wavelength=self._experiment.wavelength,
-                                                report=report)
-                self.report._last_action = key
-                self.data_sets.__setattr__(key, container)
-                self._last_data_sets = container
+            report = copy.copy(self.report)
+
+            # Clean up keys like "before_cut_time" to "Cut Time" for the GUI
+            clean_name = key.replace('before_', '').replace('_', ' ').title()
+
+            # Ensure we use .copy() so the backend math doesn't mutate our frozen history!
+            container = UnvariableContainer(
+                action_name=clean_name,
+                x=self._experiment.x.copy() if self._experiment.x is not None else None,
+                data=self._experiment.data.copy() if self._experiment.data is not None else None,
+                wavelength=self._experiment.wavelength.copy() if self._experiment.wavelength is not None else None,
+                report=report
+            )
+
+            self.history_stack.append(container)
+            self.report._last_action = clean_name
 
     """
     Parameters functions and fitting

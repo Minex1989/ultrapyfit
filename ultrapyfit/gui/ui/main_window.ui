@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1276</width>
-    <height>792</height>
+    <width>1280</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -61,9 +61,708 @@
       <property name="currentIndex">
        <number>0</number>
       </property>
+      <widget class="QWidget" name="pagePreprocessing">
+       <attribute name="title">
+        <string>Preprocessing</string>
+       </attribute>
+       <layout class="QVBoxLayout" name="verticalLayout_21" stretch="0,2,0">
+        <property name="leftMargin">
+         <number>0</number>
+        </property>
+        <property name="topMargin">
+         <number>0</number>
+        </property>
+        <property name="rightMargin">
+         <number>0</number>
+        </property>
+        <property name="bottomMargin">
+         <number>0</number>
+        </property>
+        <item>
+         <widget class="QGroupBox" name="grpPreprocessingtool">
+          <property name="title">
+           <string/>
+          </property>
+          <layout class="QHBoxLayout" name="horizontalLayout_17">
+           <item>
+            <widget class="QLabel" name="lblPreprocessingTool">
+             <property name="text">
+              <string>Preprocessing Tool:</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QComboBox" name="cbPreprocessingTool">
+             <property name="enabled">
+              <bool>false</bool>
+             </property>
+             <item>
+              <property name="text">
+               <string>Cut Time</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Cut Wavelength</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Shift Time</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Baseline Subtraction</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Polynomial Baseline</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Average Time</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Derivate</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Delete Points</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Calibrate Wavelength</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Chirp Correction (Polynomial)</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Chirp Correction (Sellmeier)</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_9">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="MplWidget" name="preprocessingMplWidget" native="true">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_18" stretch="2,0,1">
+          <item>
+           <widget class="QGroupBox" name="grpPreprocessingSettings">
+            <property name="title">
+             <string>Tool Inputs</string>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_20">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QStackedWidget" name="stackedPreprocessTools">
+               <property name="currentIndex">
+                <number>0</number>
+               </property>
+               <widget class="QWidget" name="pageCutTimeSettings">
+                <layout class="QFormLayout" name="formLayout_5">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblCutTimeMin">
+                   <property name="text">
+                    <string>Min Time:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblCutTimeMax">
+                   <property name="text">
+                    <string>Max Time:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="leCutTimeMax">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leCutTimeMin">
+                   <property name="enabled">
+                    <bool>false</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageCutWavelength">
+                <layout class="QFormLayout" name="formLayout_6">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblCutWaveMin">
+                   <property name="text">
+                    <string>Min Wave:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblCutWaveMax">
+                   <property name="text">
+                    <string>Max Wave:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leCutWaveMin"/>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="leCutWaveMax"/>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblCutWaveInner">
+                   <property name="text">
+                    <string>Cutting Mode:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QComboBox" name="cbCutWaveInner">
+                   <item>
+                    <property name="text">
+                     <string>Select</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Cut</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageShiftTime">
+                <layout class="QHBoxLayout" name="horizontalLayout_21">
+                 <item>
+                  <widget class="QLabel" name="lblShiftTime">
+                   <property name="text">
+                    <string>Shift Value:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item>
+                  <widget class="QLineEdit" name="leShiftTime"/>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageBaselineSubtraction">
+                <layout class="QFormLayout" name="formLayout_7">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblBaseSpec">
+                   <property name="text">
+                    <string>Spectra Index/Count:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QCheckBox" name="chkBaseOnlyOne">
+                   <property name="text">
+                    <string>Subtract only this index (Don't average)</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <spacer name="horizontalSpacer_12">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Horizontal</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>40</width>
+                     <height>20</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leBaseSpec">
+                   <property name="toolTip">
+                    <string>(e.g., &quot;5&quot; or &quot;2, 5&quot;)</string>
+                   </property>
+                   <property name="placeholderText">
+                    <string/>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pagePolynomialBaseline">
+                <layout class="QFormLayout" name="formLayout_8">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblPolyBasePoints">
+                   <property name="text">
+                    <string>Zero Points:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblPolyBaseOrder">
+                   <property name="text">
+                    <string>Order:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="lePolyBasePoints">
+                   <property name="placeholderText">
+                    <string>e.g. 400, 500</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QSpinBox" name="sbPolyBaseOrder">
+                   <property name="value">
+                    <number>3</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageAverageTime">
+                <layout class="QGridLayout" name="gridLayout">
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblAvgTimeMethod">
+                   <property name="text">
+                    <string>Method:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblAvgTimeStart">
+                   <property name="text">
+                    <string>Start:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QSpinBox" name="sbAvgTimeGrid">
+                   <property name="value">
+                    <number>5</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="lblAvgTimeGrid">
+                   <property name="text">
+                    <string>Grid Dense:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leAvgTimeStart"/>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="lblAvgTimeStep">
+                   <property name="text">
+                    <string>Step:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QLineEdit" name="leAvgTimeStep"/>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="cbAvgTimeMethod">
+                   <item>
+                    <property name="text">
+                     <string>Log</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Constant</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                 <item row="2" column="0" colspan="4">
+                  <spacer name="verticalSpacer_3">
+                   <property name="orientation">
+                    <enum>Qt::Orientation::Vertical</enum>
+                   </property>
+                   <property name="sizeHint" stdset="0">
+                    <size>
+                     <width>20</width>
+                     <height>40</height>
+                    </size>
+                   </property>
+                  </spacer>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageDerivate">
+                <layout class="QFormLayout" name="formLayout_9">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblDerivWindow">
+                   <property name="text">
+                    <string>Window Length (Odd):</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QSpinBox" name="sbDerivPoly">
+                   <property name="value">
+                    <number>3</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblDerivPoly">
+                   <property name="text">
+                    <string>Poly Order:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QSpinBox" name="sbDerivWindow">
+                   <property name="maximum">
+                    <number>9999</number>
+                   </property>
+                   <property name="singleStep">
+                    <number>2</number>
+                   </property>
+                   <property name="value">
+                    <number>25</number>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblDerivOrder">
+                   <property name="text">
+                    <string>Derivative:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QSpinBox" name="sbDerivOrder">
+                   <property name="value">
+                    <number>1</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageDeletePoints">
+                <layout class="QFormLayout" name="formLayout_10">
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblDeleteDim">
+                   <property name="text">
+                    <string>Dimension:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblDeletePoints">
+                   <property name="text">
+                    <string>Points:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leDeletePoints">
+                   <property name="placeholderText">
+                    <string>451, 500, 537</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QComboBox" name="cbDeleteDim">
+                   <item>
+                    <property name="text">
+                     <string>Time</string>
+                    </property>
+                   </item>
+                   <item>
+                    <property name="text">
+                     <string>Wavelength</string>
+                    </property>
+                   </item>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageCalibrateWavelength">
+                <layout class="QFormLayout" name="formLayout_11">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblCalibPixels">
+                   <property name="text">
+                    <string>Pixels:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblCalibWaves">
+                   <property name="text">
+                    <string>True Waves:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblCalibOrder">
+                   <property name="text">
+                    <string>Order:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leCalibPixels">
+                   <property name="placeholderText">
+                    <string>10, 50, 100 or 1-500</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QLineEdit" name="leCalibWaves">
+                   <property name="placeholderText">
+                    <string>200, 250, 300 or 300-800</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1">
+                  <widget class="QSpinBox" name="sbCalibOrder">
+                   <property name="value">
+                    <number>2</number>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageChirpPolynomial">
+                <layout class="QFormLayout" name="formLayout_12">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblChirpPoints">
+                   <property name="text">
+                    <string>Click graph to pick points</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QLineEdit" name="leChirpPoints">
+                   <property name="readOnly">
+                    <bool>true</bool>
+                   </property>
+                  </widget>
+                 </item>
+                </layout>
+               </widget>
+               <widget class="QWidget" name="pageChirpSellmeier">
+                <layout class="QGridLayout" name="gridLayout_2" columnstretch="0,1,0,1">
+                 <item row="0" column="0">
+                  <widget class="QLabel" name="lblChirpExc">
+                   <property name="text">
+                    <string>Excitation:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="1">
+                  <widget class="QDoubleSpinBox" name="dsbChirpExc"/>
+                 </item>
+                 <item row="0" column="2">
+                  <widget class="QLabel" name="lblChirpBK7">
+                   <property name="text">
+                    <string>BK7:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="0" column="3">
+                  <widget class="QDoubleSpinBox" name="dsbChirpBK7"/>
+                 </item>
+                 <item row="1" column="0">
+                  <widget class="QLabel" name="lblChirpCaF2">
+                   <property name="text">
+                    <string>CaF2:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="1">
+                  <widget class="QDoubleSpinBox" name="dsbChirpCaF2"/>
+                 </item>
+                 <item row="1" column="2">
+                  <widget class="QLabel" name="lblChirpSiO2">
+                   <property name="text">
+                    <string>SiO2:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="1" column="3">
+                  <widget class="QDoubleSpinBox" name="dsbChirpSiO2"/>
+                 </item>
+                 <item row="2" column="0">
+                  <widget class="QLabel" name="lblChirpOffset">
+                   <property name="text">
+                    <string>Offset:</string>
+                   </property>
+                  </widget>
+                 </item>
+                 <item row="2" column="1" colspan="3">
+                  <widget class="QDoubleSpinBox" name="dsbChirpOffset"/>
+                 </item>
+                </layout>
+               </widget>
+              </widget>
+             </item>
+             <item>
+              <widget class="QPushButton" name="btnApplyPreprocess">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="minimumSize">
+                <size>
+                 <width>0</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>30</height>
+                </size>
+               </property>
+               <property name="font">
+                <font>
+                 <pointsize>10</pointsize>
+                 <bold>true</bold>
+                </font>
+               </property>
+               <property name="text">
+                <string>Apply Tool</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="Line" name="line_3">
+            <property name="orientation">
+             <enum>Qt::Orientation::Vertical</enum>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <layout class="QVBoxLayout" name="verticalLayout_13">
+            <item>
+             <widget class="QLabel" name="lblPreprocessHistory">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="font">
+               <font>
+                <pointsize>10</pointsize>
+                <bold>true</bold>
+               </font>
+              </property>
+              <property name="text">
+               <string>Action History:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QListWidget" name="listPreprocessHistory">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>110</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>110</height>
+               </size>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="btnUndoPreprocess">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>Undo Last Action</string>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
       <widget class="QWidget" name="pageDataExplorer">
        <attribute name="title">
-        <string>Adatfelfedező</string>
+        <string>Data Explorer</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_11">
         <property name="leftMargin">
@@ -114,7 +813,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Nézet:</string>
+              <string>View:</string>
              </property>
              <property name="alignment">
               <set>Qt::AlignmentFlag::AlignLeading|Qt::AlignmentFlag::AlignLeft|Qt::AlignmentFlag::AlignVCenter</set>
@@ -140,12 +839,12 @@
              </property>
              <item>
               <property name="text">
-               <string>3D nézet</string>
+               <string>3D View</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>Spektrum</string>
+               <string>Spectra</string>
               </property>
              </item>
              <item>
@@ -186,7 +885,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Plot Exportálása</string>
+              <string>Export Plot</string>
              </property>
             </widget>
            </item>
@@ -270,7 +969,7 @@
                </size>
               </property>
               <property name="title">
-               <string>3D beállítások</string>
+               <string>3D Settings</string>
               </property>
               <layout class="QHBoxLayout" name="horizontalLayout_10">
                <property name="spacing">
@@ -300,7 +999,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Színpaletták:</string>
+                  <string>Colormaps:</string>
                  </property>
                 </widget>
                </item>
@@ -375,7 +1074,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Nézet stílus:</string>
+                  <string>View style:</string>
                  </property>
                 </widget>
                </item>
@@ -404,17 +1103,17 @@
                  </property>
                  <item>
                   <property name="text">
-                   <string>Felület</string>
+                   <string>Surface</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Vázlat</string>
+                   <string>Wireframe</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Kontúr</string>
+                   <string>Contour</string>
                   </property>
                  </item>
                 </widget>
@@ -440,7 +1139,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Felbontás:</string>
+                  <string>Resolution:</string>
                  </property>
                 </widget>
                </item>
@@ -496,7 +1195,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Camera visszaállítása</string>
+                  <string>Reset camera</string>
                  </property>
                 </widget>
                </item>
@@ -568,7 +1267,7 @@
                  </sizepolicy>
                 </property>
                 <property name="title">
-                 <string>Idő szelekció</string>
+                 <string>Time Selection</string>
                 </property>
                 <layout class="QGridLayout" name="gridLayout_4">
                  <item row="0" column="0">
@@ -580,7 +1279,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Összes Spektrum</string>
+                    <string>All Spectra</string>
                    </property>
                    <property name="checked">
                     <bool>true</bool>
@@ -596,7 +1295,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Automatikus</string>
+                    <string>Automatic</string>
                    </property>
                   </widget>
                  </item>
@@ -615,7 +1314,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Spektrumok száma:</string>
+                    <string>Number of spectra</string>
                    </property>
                   </widget>
                  </item>
@@ -656,7 +1355,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Specifikus hullámhossz</string>
+                    <string>Specific Wavelength:</string>
                    </property>
                   </widget>
                  </item>
@@ -685,7 +1384,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Egyéni</string>
+                    <string>Custom</string>
                    </property>
                   </widget>
                  </item>
@@ -717,7 +1416,7 @@
                  </sizepolicy>
                 </property>
                 <property name="title">
-                 <string>Feldolgozás és tartományok</string>
+                 <string>Processing and Region</string>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_4">
                  <item>
@@ -735,7 +1434,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Időintervallum korlátozása</string>
+                    <string>Time interval range</string>
                    </property>
                   </widget>
                  </item>
@@ -843,7 +1542,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Időtartomány a maximális amplitúdótól</string>
+                    <string>Time interval from maximum amplitude</string>
                    </property>
                   </widget>
                  </item>
@@ -867,7 +1566,7 @@
                       </size>
                      </property>
                      <property name="text">
-                      <string>Átlagolandó pontok száma</string>
+                      <string>Average points:</string>
                      </property>
                     </widget>
                    </item>
@@ -898,7 +1597,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Maszkolási tartomány</string>
+                    <string>Mask region</string>
                    </property>
                   </widget>
                  </item>
@@ -1009,13 +1708,13 @@
                  </size>
                 </property>
                 <property name="title">
-                 <string>Kinézet</string>
+                 <string>View</string>
                 </property>
                 <layout class="QVBoxLayout" name="verticalLayout_2">
                  <item>
                   <widget class="QLabel" name="lblColormapsSpectra">
                    <property name="text">
-                    <string>Színpaletták</string>
+                    <string>Colormaps</string>
                    </property>
                   </widget>
                  </item>
@@ -1063,7 +1762,7 @@
                  <item>
                   <widget class="QLabel" name="lblLegendSpectra">
                    <property name="text">
-                    <string>Jelmagyarázat</string>
+                    <string>Legend</string>
                    </property>
                   </widget>
                  </item>
@@ -1083,17 +1782,17 @@
                    </property>
                    <item>
                     <property name="text">
-                     <string>Szöveges címke</string>
+                     <string>Text labels</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Idő színskála</string>
+                     <string>Time colorbar</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Rejtett</string>
+                     <string>Hidden</string>
                     </property>
                    </item>
                   </widget>
@@ -1101,7 +1800,7 @@
                  <item>
                   <widget class="QLabel" name="lblStyleSpectra">
                    <property name="text">
-                    <string>Megjelenítési stílus</string>
+                    <string>View style</string>
                    </property>
                   </widget>
                  </item>
@@ -1121,32 +1820,32 @@
                    </property>
                    <item>
                     <property name="text">
-                     <string>Ultrapyfit világos</string>
+                     <string>Ultrapyfit bright</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Ultrapyfit sötét</string>
+                     <string>Ultrapyfit dark</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Alapértelmezett</string>
+                     <string>Default</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Seaborn világos rács</string>
+                     <string>Seaborn white grid</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Seaborn sötét rács</string>
+                     <string>Seaborn dark grid</string>
                     </property>
                    </item>
                    <item>
                     <property name="text">
-                     <string>Sötét háttér</string>
+                     <string>Dark background</string>
                     </property>
                    </item>
                    <item>
@@ -1195,7 +1894,7 @@
                </size>
               </property>
               <property name="title">
-               <string>Hullámhossz Szelekció</string>
+               <string>Wavelength selection</string>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_5">
                <property name="topMargin">
@@ -1214,18 +1913,18 @@
                  </property>
                  <property name="minimumSize">
                   <size>
-                   <width>111</width>
+                   <width>121</width>
                    <height>26</height>
                   </size>
                  </property>
                  <property name="maximumSize">
                   <size>
-                   <width>111</width>
+                   <width>121</width>
                    <height>26</height>
                   </size>
                  </property>
                  <property name="text">
-                  <string>Összes hullám</string>
+                  <string>All wavelengths</string>
                  </property>
                  <property name="checked">
                   <bool>true</bool>
@@ -1253,7 +1952,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Automatikus</string>
+                  <string>Automatic</string>
                  </property>
                  <property name="checked">
                   <bool>false</bool>
@@ -1281,7 +1980,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Egyéni</string>
+                  <string>Custom</string>
                  </property>
                 </widget>
                </item>
@@ -1325,7 +2024,7 @@
                </size>
               </property>
               <property name="title">
-               <string>Kinézet</string>
+               <string>View</string>
               </property>
               <layout class="QVBoxLayout" name="verticalLayout_6">
                <property name="leftMargin">
@@ -1358,7 +2057,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Jelmagyarázat</string>
+                  <string>Legend</string>
                  </property>
                 </widget>
                </item>
@@ -1384,17 +2083,17 @@
                  </property>
                  <item>
                   <property name="text">
-                   <string>Automatikus</string>
+                   <string>Automatic</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Mindig látható</string>
+                   <string>Always shown</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Elrejtve</string>
+                   <string>Hidden</string>
                   </property>
                  </item>
                 </widget>
@@ -1420,7 +2119,7 @@
                   </size>
                  </property>
                  <property name="text">
-                  <string>Megjelenítési stílus</string>
+                  <string>View style</string>
                  </property>
                 </widget>
                </item>
@@ -1446,32 +2145,32 @@
                  </property>
                  <item>
                   <property name="text">
-                   <string>Ultrapyfit világos</string>
+                   <string>Ultrapyfit bright</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Ultrapyfit sötét</string>
+                   <string>Ultrapyfit dark</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Alapértelmezett</string>
+                   <string>Default</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Seaborn világos rács</string>
+                   <string>Seaborn white grid</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Seaborn sötét rács</string>
+                   <string>Seaborn dark grid</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Sötét háttér</string>
+                   <string>Dark background</string>
                   </property>
                  </item>
                  <item>
@@ -1538,7 +2237,7 @@
            </size>
           </property>
           <property name="title">
-           <string>SVD Beállítások</string>
+           <string>SVD Settings</string>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_9">
            <property name="topMargin">
@@ -1559,7 +2258,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Kiszámított komponensek:</string>
+              <string>Calculated components:</string>
              </property>
             </widget>
            </item>
@@ -1613,7 +2312,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Megjelenített komponensek:</string>
+              <string>Rendered components:</string>
              </property>
             </widget>
            </item>
@@ -1704,7 +2403,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Logaritmikus skála</string>
+              <string>Logaritmic scale</string>
              </property>
             </widget>
            </item>
@@ -1715,7 +2414,7 @@
       </widget>
       <widget class="QWidget" name="pageFitting">
        <attribute name="title">
-        <string>Illesztés beállítása</string>
+        <string>Fitting Settings</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_9">
         <property name="leftMargin">
@@ -1781,7 +2480,7 @@
               </size>
              </property>
              <property name="text">
-              <string>Illesztés típusa:</string>
+              <string>Fit type:</string>
              </property>
             </widget>
            </item>
@@ -1791,7 +2490,7 @@
               <bool>false</bool>
              </property>
              <property name="sizePolicy">
-              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
                <horstretch>0</horstretch>
                <verstretch>0</verstretch>
               </sizepolicy>
@@ -1813,15 +2512,28 @@
              </property>
              <item>
               <property name="text">
-               <string>Globális illesztés</string>
+               <string>Global fit</string>
               </property>
              </item>
              <item>
               <property name="text">
-               <string>Egyetlen nyom illesztése</string>
+               <string>Single trace fit</string>
               </property>
              </item>
             </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_10">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
            </item>
           </layout>
          </widget>
@@ -1859,7 +2571,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Adatkiválasztás</string>
+             <string>Data Selection</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_8">
              <property name="spacing">
@@ -1941,7 +2653,7 @@
                     <string>Illesztés a Szinguláris Érték Felbontás (SVD) kinetikai vektorai alapján. Ez a leginkább ajánlott módszer, mivel kiválóan szűri a zajt.</string>
                    </property>
                    <property name="text">
-                    <string>Svd Komponensek:</string>
+                    <string>Svd components:</string>
                    </property>
                    <property name="checked">
                     <bool>true</bool>
@@ -2000,7 +2712,7 @@
                     <string>Illesztés egy megadott, egybefüggő hullámhossz-tartományon belül.</string>
                    </property>
                    <property name="text">
-                    <string>Tartomány (nm):</string>
+                    <string>Region:</string>
                    </property>
                   </widget>
                  </item>
@@ -2128,7 +2840,7 @@
                     <string>Illesztés specifikus, egyedi hullámhosszak (nyomok) kiválasztásával.</string>
                    </property>
                    <property name="text">
-                    <string>Nyomok (nm):</string>
+                    <string>Traces:</string>
                    </property>
                    <property name="checked">
                     <bool>false</bool>
@@ -2181,7 +2893,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Átlagolás (pontok):</string>
+                    <string>Average points:</string>
                    </property>
                   </widget>
                  </item>
@@ -2216,7 +2928,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Kizárt Tartomány (nm):</string>
+                    <string>Excluded regions:</string>
                    </property>
                   </widget>
                  </item>
@@ -2249,7 +2961,7 @@
                     </size>
                    </property>
                    <property name="text">
-                    <string>Vizsgált hullámhossz (nm):</string>
+                    <string>Wavelength analyzed  (nm):</string>
                    </property>
                   </widget>
                  </item>
@@ -2266,7 +2978,7 @@
                  <item row="1" column="0">
                   <widget class="QLabel" name="lblSingleFitAverage">
                    <property name="text">
-                    <string>Átlagolás (pontok):</string>
+                    <string>Average (points):</string>
                    </property>
                   </widget>
                  </item>
@@ -2305,7 +3017,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Beállítások és Futtatás</string>
+             <string>Settings and Execution</string>
             </property>
             <layout class="QFormLayout" name="formLayout_3">
              <property name="leftMargin">
@@ -2323,7 +3035,7 @@
              <item row="0" column="0">
               <widget class="QLabel" name="lblExpNo">
                <property name="text">
-                <string>Exponenciálisok száma:</string>
+                <string>Number of Exponential</string>
                </property>
               </widget>
              </item>
@@ -2340,7 +3052,7 @@
              <item row="1" column="0">
               <widget class="QLabel" name="lblIRFw">
                <property name="text">
-                <string>IRF szélesség (w):</string>
+                <string>IRF width:</string>
                </property>
               </widget>
              </item>
@@ -2357,7 +3069,7 @@
              <item row="2" column="0">
               <widget class="QLabel" name="lblIRFmu">
                <property name="text">
-                <string>Idő nulla (mu):</string>
+                <string>Time zero:</string>
                </property>
               </widget>
              </item>
@@ -2374,7 +3086,7 @@
              <item row="3" column="0">
               <widget class="QLabel" name="lblInitialTau">
                <property name="text">
-                <string>Kezdeti tau (ps):</string>
+                <string>Starter tau(s)</string>
                </property>
               </widget>
              </item>
@@ -2387,7 +3099,7 @@
                 <string>OPCIONÁLIS: Adja meg a kezdeti élettartam (tau) becsléseket pikoszekundumban, vesszővel elválasztva (pl. 1.5, 10, 200). Ha üresen hagyja, a program automatikusan generál becslést.</string>
                </property>
                <property name="placeholderText">
-                <string>Opcionális (1.5, 15, 200)</string>
+                <string>Optional (1.5, 15, 200)</string>
                </property>
               </widget>
              </item>
@@ -2400,7 +3112,7 @@
                 <string>Adjon a modellhez egy végtelen élettartamú (nem bomló) komponenst az időablakot meghaladó, hosszú távú háttérjelek leírására.</string>
                </property>
                <property name="text">
-                <string>Végtelen komponens</string>
+                <string>Infinite Component</string>
                </property>
               </widget>
              </item>
@@ -2431,7 +3143,7 @@
                   <string>Indítsa el az illesztési algoritmust a megadott paraméterekkel. A folyamat befejeztével az eredmény megjelenik a bal oldali fában.</string>
                  </property>
                  <property name="text">
-                  <string>Illesztés Futtatása</string>
+                  <string>Start Fit</string>
                  </property>
                 </widget>
                </item>
@@ -2487,7 +3199,7 @@
              </size>
             </property>
             <property name="title">
-             <string>Illesztés folyamata</string>
+             <string>Fitting Progress</string>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_10">
              <property name="spacing">
@@ -2530,7 +3242,7 @@
       </widget>
       <widget class="QWidget" name="pageResults">
        <attribute name="title">
-        <string>Eredmények</string>
+        <string>Result</string>
        </attribute>
        <layout class="QVBoxLayout" name="verticalLayout_12">
         <property name="spacing">
@@ -2594,7 +3306,7 @@
                   </sizepolicy>
                  </property>
                  <property name="text">
-                  <string>Nézet:</string>
+                  <string>View:</string>
                  </property>
                 </widget>
                </item>
@@ -2602,20 +3314,33 @@
                 <widget class="QComboBox" name="cbGlobalViewMode">
                  <item>
                   <property name="text">
-                   <string>DAS / SAS Spektrumok</string>
+                   <string>DAS / SAS Spectra</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Kinetika (Illesztett Nyomok)</string>
+                   <string>Kinetics (Fitted Traces)</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
-                   <string>Kinetika + Reziduálisok</string>
+                   <string>Kinetics + Residuals</string>
                   </property>
                  </item>
                 </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_11">
+                 <property name="orientation">
+                  <enum>Qt::Orientation::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
                </item>
               </layout>
              </widget>
@@ -2869,16 +3594,17 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1276</width>
-     <height>23</height>
+     <width>1280</width>
+     <height>33</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>Fájlok</string>
+     <string>File</string>
     </property>
     <addaction name="actImport"/>
-    <addaction name="actExport"/>
+    <addaction name="actLoad"/>
+    <addaction name="actSave"/>
    </widget>
    <addaction name="menuFile"/>
   </widget>
@@ -2908,7 +3634,7 @@
     <set>Qt::DockWidgetArea::LeftDockWidgetArea|Qt::DockWidgetArea::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Kísérletek</string>
+    <string>Experiments</string>
    </property>
    <property name="dockLocation">
     <enum>Qt::DockWidgetArea::LeftDockWidgetArea</enum>
@@ -2998,7 +3724,7 @@
     <set>Qt::DockWidgetArea::LeftDockWidgetArea|Qt::DockWidgetArea::RightDockWidgetArea</set>
    </property>
    <property name="windowTitle">
-    <string>Tuljadonságok</string>
+    <string>Properties</string>
    </property>
    <property name="dockLocation">
     <enum>Qt::DockWidgetArea::RightDockWidgetArea</enum>
@@ -3039,15 +3765,15 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>241</width>
-          <height>694</height>
+          <width>314</width>
+          <height>676</height>
          </rect>
         </property>
         <attribute name="label">
-         <string>Metaadatok</string>
+         <string>Metadata</string>
         </attribute>
-        <layout class="QVBoxLayout" name="verticalLayout_13">
-         <item>
+        <layout class="QFormLayout" name="formLayout_4">
+         <item row="0" column="0">
           <widget class="QLabel" name="lblTimeMetric">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -3069,11 +3795,11 @@
             </font>
            </property>
            <property name="text">
-            <string>Idő mértékegysége:</string>
+            <string>Time unit:</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="0" column="1">
           <widget class="QComboBox" name="cbTimeMetric">
            <property name="font">
             <font>
@@ -3108,7 +3834,7 @@
            </item>
           </widget>
          </item>
-         <item>
+         <item row="1" column="0">
           <widget class="QLabel" name="lblWavelengthMetric">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -3123,11 +3849,11 @@
             </font>
            </property>
            <property name="text">
-            <string>Hullámhossz mértékegysége:</string>
+            <string>Waveength unit:</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="1" column="1">
           <widget class="QComboBox" name="cbWavelengthMetric">
            <property name="font">
             <font>
@@ -3152,22 +3878,35 @@
            </item>
           </widget>
          </item>
-         <item>
+         <item row="2" column="0">
           <widget class="QLabel" name="lblMetaShapeDescription">
            <property name="text">
-            <string>Adatpontok (Idő x Spektrum):</string>
+            <string>Datapoints (Time x Trace)</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="2" column="1">
           <widget class="QLabel" name="lblMetaShape">
            <property name="text">
             <string>-</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="3" column="0">
           <spacer name="verticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Orientation::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="3" column="1">
+          <spacer name="verticalSpacer_2">
            <property name="orientation">
             <enum>Qt::Orientation::Vertical</enum>
            </property>
@@ -3192,9 +3931,14 @@
     <string>Import</string>
    </property>
   </action>
-  <action name="actExport">
+  <action name="actSave">
    <property name="text">
-    <string>Export</string>
+    <string>Save Data</string>
+   </property>
+  </action>
+  <action name="actLoad">
+   <property name="text">
+    <string>Load Data</string>
    </property>
   </action>
  </widget>
@@ -3206,6 +3950,101 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>tabMain</tabstop>
+  <tabstop>cbPreprocessingTool</tabstop>
+  <tabstop>cbCutWaveInner</tabstop>
+  <tabstop>leCutTimeMin</tabstop>
+  <tabstop>leCutTimeMax</tabstop>
+  <tabstop>leCutWaveMax</tabstop>
+  <tabstop>leShiftTime</tabstop>
+  <tabstop>chkBaseOnlyOne</tabstop>
+  <tabstop>lePolyBasePoints</tabstop>
+  <tabstop>sbPolyBaseOrder</tabstop>
+  <tabstop>sbAvgTimeGrid</tabstop>
+  <tabstop>leAvgTimeStart</tabstop>
+  <tabstop>leAvgTimeStep</tabstop>
+  <tabstop>cbAvgTimeMethod</tabstop>
+  <tabstop>sbDerivPoly</tabstop>
+  <tabstop>sbDerivWindow</tabstop>
+  <tabstop>sbDerivOrder</tabstop>
+  <tabstop>leDeletePoints</tabstop>
+  <tabstop>cbDeleteDim</tabstop>
+  <tabstop>leCalibPixels</tabstop>
+  <tabstop>leCalibWaves</tabstop>
+  <tabstop>sbCalibOrder</tabstop>
+  <tabstop>leChirpPoints</tabstop>
+  <tabstop>dsbChirpExc</tabstop>
+  <tabstop>dsbChirpBK7</tabstop>
+  <tabstop>dsbChirpCaF2</tabstop>
+  <tabstop>dsbChirpSiO2</tabstop>
+  <tabstop>dsbChirpOffset</tabstop>
+  <tabstop>btnApplyPreprocess</tabstop>
+  <tabstop>listPreprocessHistory</tabstop>
+  <tabstop>btnUndoPreprocess</tabstop>
+  <tabstop>cbViewMode</tabstop>
+  <tabstop>btnExportPlot</tabstop>
+  <tabstop>cbColormaps3D</tabstop>
+  <tabstop>cbStyle3D</tabstop>
+  <tabstop>sbRenderQuality3D</tabstop>
+  <tabstop>btnResetView3D</tabstop>
+  <tabstop>rbAllSpectra</tabstop>
+  <tabstop>rbAutomaticSpectra</tabstop>
+  <tabstop>sbNumberOfSpectra</tabstop>
+  <tabstop>chkAtWavelengthSpectra</tabstop>
+  <tabstop>dsbAtWavelengthSpectra</tabstop>
+  <tabstop>rbCustomSpectra</tabstop>
+  <tabstop>leCustomTimesSpectral</tabstop>
+  <tabstop>chkTimeRangeSpectra</tabstop>
+  <tabstop>dsbTimeRangeStartSpectra</tabstop>
+  <tabstop>dsbTimeRangeStopSpectra</tabstop>
+  <tabstop>chkFromMaxToMinSpectra</tabstop>
+  <tabstop>sbAverageSpectra</tabstop>
+  <tabstop>chkMaskRangeSpectra</tabstop>
+  <tabstop>dsbMaskRangeStartSpectra</tabstop>
+  <tabstop>dsbMaskRangeStopSpectra</tabstop>
+  <tabstop>cbColormapsSpectra</tabstop>
+  <tabstop>cbLegendSpectra</tabstop>
+  <tabstop>cbStyleSpectra</tabstop>
+  <tabstop>rbAllTrace</tabstop>
+  <tabstop>rbAutomaticTrace</tabstop>
+  <tabstop>rbCustomTrace</tabstop>
+  <tabstop>leCustomWavelengthTrace</tabstop>
+  <tabstop>cbLegendTrace</tabstop>
+  <tabstop>cbStyleTrace</tabstop>
+  <tabstop>sbSvdCalcComps</tabstop>
+  <tabstop>sldSvdShowComps</tabstop>
+  <tabstop>sbSvdShowComps</tabstop>
+  <tabstop>chkSvdLogScale</tabstop>
+  <tabstop>cbFittingType</tabstop>
+  <tabstop>rbGlobalFitSvd</tabstop>
+  <tabstop>sbGlobalFitSvdComps</tabstop>
+  <tabstop>rbGlobalFitRegion</tabstop>
+  <tabstop>sbGlobalFitRegionMin</tabstop>
+  <tabstop>sbGlobalFitRegionMax</tabstop>
+  <tabstop>rbGlobalFitTraces</tabstop>
+  <tabstop>leGlobalFitTraces</tabstop>
+  <tabstop>sbGlobalFitAverage</tabstop>
+  <tabstop>leGlobalFitMasking</tabstop>
+  <tabstop>sbSingleFitWave</tabstop>
+  <tabstop>sbSingleFitAverage</tabstop>
+  <tabstop>sbExpNo</tabstop>
+  <tabstop>dsbIRFw</tabstop>
+  <tabstop>dsbIRFmu</tabstop>
+  <tabstop>leInitialTau</tabstop>
+  <tabstop>chkTauInf</tabstop>
+  <tabstop>btnRunFit</tabstop>
+  <tabstop>textFitLog</tabstop>
+  <tabstop>cbGlobalViewMode</tabstop>
+  <tabstop>chkConvertToEAS</tabstop>
+  <tabstop>leGlobalKineticsSel</tabstop>
+  <tabstop>textGlobalReport</tabstop>
+  <tabstop>chkSingleDetails</tabstop>
+  <tabstop>treeExperiment</tabstop>
+  <tabstop>cbTimeMetric</tabstop>
+  <tabstop>cbWavelengthMetric</tabstop>
+  <tabstop>leCutWaveMin</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>
@@ -3215,12 +4054,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>391</x>
-     <y>764</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>514</x>
-     <y>769</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3231,12 +4070,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>391</x>
-     <y>764</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>391</x>
-     <y>773</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3247,12 +4086,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>391</x>
-     <y>773</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>514</x>
-     <y>773</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3263,12 +4102,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>391</x>
-     <y>778</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>514</x>
-     <y>782</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3279,12 +4118,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>804</x>
-     <y>759</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>698</x>
-     <y>765</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3295,12 +4134,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>804</x>
-     <y>759</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>862</x>
-     <y>765</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3311,12 +4150,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>863</x>
-     <y>778</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>698</x>
-     <y>783</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3327,12 +4166,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>863</x>
-     <y>778</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
     <hint type="destinationlabel">
-     <x>862</x>
-     <y>783</y>
+     <x>294</x>
+     <y>742</y>
     </hint>
    </hints>
   </connection>
@@ -3343,12 +4182,12 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>337</x>
-     <y>812</y>
+     <x>305</x>
+     <y>738</y>
     </hint>
     <hint type="destinationlabel">
-     <x>485</x>
-     <y>843</y>
+     <x>294</x>
+     <y>738</y>
     </hint>
    </hints>
   </connection>
@@ -3375,8 +4214,8 @@
    <slot>setValue(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>892</x>
-     <y>739</y>
+     <x>873</x>
+     <y>759</y>
     </hint>
     <hint type="destinationlabel">
      <x>705</x>
@@ -3391,8 +4230,8 @@
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>572</x>
-     <y>85</y>
+     <x>458</x>
+     <y>95</y>
     </hint>
     <hint type="destinationlabel">
      <x>554</x>
@@ -3407,8 +4246,8 @@
    <slot>setText(QString)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>432</x>
-     <y>838</y>
+     <x>294</x>
+     <y>738</y>
     </hint>
     <hint type="destinationlabel">
      <x>468</x>
@@ -3423,8 +4262,8 @@
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>368</x>
-     <y>588</y>
+     <x>347</x>
+     <y>596</y>
     </hint>
     <hint type="destinationlabel">
      <x>391</x>

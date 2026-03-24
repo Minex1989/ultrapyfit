@@ -6,7 +6,6 @@ Created on Mon Mar 15 21:40:16 2021
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-from PyQt5.QtGui import QIcon
 from matplotlib.widgets import Slider, Button, RadioButtons
 from pylab import pcolormesh
 from ultrapyfit.utils.Preprocessing import ExperimentException
@@ -290,7 +289,7 @@ class ChirpCorrection:
         ax1.axhline(linewidth=1, linestyle='--', color='k')
         ax1.ticklabel_format(style='sci', axis='y')
         # f.tight_layout()
-        ax1.set_ylabel('$\Delta$A', size=14)
+        ax1.set_ylabel(r'$\Delta$A', size=14)
         ax1.set_xlabel(xlabel, size=14)
         ax1.minorticks_on()
         ax0.set_ylabel(xlabel, size=14)
@@ -490,10 +489,6 @@ class EstimationGVDSellmeier(EstimationGVD):
         self.button = Button(resetax, 'Calculate', color='tab:red',
                              hovercolor='0.975')
         self.button.on_clicked(self._finalGVD)
-        if qt is not None:
-            self.qt_path = qt
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(qt))
         self.figGVD.show()
         self._gvd_window_on = True
         if function is not None:
@@ -594,10 +589,6 @@ class EstimationGVDPolynom(EstimationGVD):
         self.button.on_clicked(self.correct_chrip)
         self.button2.on_clicked(self._clear_fig)
         self.button3.on_clicked(self._fitPolGVD_Grapth)
-        if qt is not None:
-            self.qt_path = qt
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(qt))
         self.figGVD.show()
 
     def _clear_fig(self, event):
