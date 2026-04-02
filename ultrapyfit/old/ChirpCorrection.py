@@ -8,7 +8,6 @@ import numpy as np
 import lmfit
 import matplotlib.pyplot as plt
 import pandas as pd
-from PyQt5.QtGui import  QIcon
 from matplotlib.widgets import Slider, Button, RadioButtons
 from ultrapyfit.graphics.MaptplotLibCursor import SnaptoCursor
 from pylab import pcolormesh
@@ -140,8 +139,6 @@ class EstimationGVDSellmeier(EstimationGVD):
         self.button.on_clicked(self.finalGVD)
         if qt is not None:
             self.qt_path = qt
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(qt))
         self.figGVD.show()
 
     def updateGVD(self, val):
@@ -298,8 +295,6 @@ class ChripCorrection:
         self.button.on_clicked(self.finalGVD)
         if qt is not None:
             self.qt_path = qt
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(qt))
         self.figGVD.show()
 
     def updateGVD(self, val):
@@ -343,8 +338,6 @@ class ChripCorrection:
         self.button2.on_clicked(self.fitPolGVD)
         if qt is not None:
             self.qt_path=qt
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(qt))
         self.figGVD.show()
     
     def fitPolGVD(self, event):
@@ -443,8 +436,6 @@ class ChripCorrection:
         self.button.on_clicked(self.finalGVD)
         if qt is not None:
             self.qt_path=qt
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(qt))
         self.figGVD.show()
     
     def updateGVD(self, val):
@@ -527,7 +518,4 @@ class ChripCorrection:
         self.radio1=self.radio.value_selected
         self.radio.on_clicked(self.radioVerifiedGVD)
         self.button.on_clicked(self.buttonVerifiedGVD)
-        if self.qt_path is not None:
-            thismanager = plt.get_current_fig_manager()
-            thismanager.window.setWindowIcon(QIcon(self.qt_path))
         self.fig.show()

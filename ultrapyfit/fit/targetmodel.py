@@ -8,8 +8,8 @@ import keyword
 import copy
 import math
 import pickle
-from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout
-from PyQt5 import QtCore, QtGui, QtWidgets, Qt
+from PySide6.QtWidgets import QApplication, QWidget, QVBoxLayout, QHBoxLayout
+from PySide6 import QtCore, QtGui, QtWidgets
 # from kineticdata import Experiment
 
 # firstly create populations and put them i model
@@ -953,7 +953,7 @@ class ModelWindow(QWidget):
         painter = QtGui.QPainter(self)
         painter.begin(self)
 
-        painter.setRenderHint(QtGui.QPainter.Antialiasing)
+        painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)
         # painter.setWorldMatrixEnabled(False)
 
         rmpen = QtGui.QPen()
@@ -998,7 +998,7 @@ class ModelWindow(QWidget):
 
     def eventFilter(self, obj, event):
         if event.type() == QtCore.QEvent.MouseMove:
-            self.mouse_position = event.pos()
+            self.mouse_position = event.position().toPoint()
             if self.mousepressed != False:
 
                 # control of X position dont go out of window
@@ -1040,16 +1040,17 @@ class ModelWindow(QWidget):
                 self.mousepressed = False
                 self.repaint()
         elif event.type() == QtCore.QEvent.MouseButtonPress:
+            event_pos = event.position().toPoint()
             for r in self.model.populations:
-                if r.rect.contains(event.pos()):
+                if r.rect.contains(event_pos):
                     self.mousepressed = r
-                    self.ref_mouse = event.pos()
+                    self.ref_mouse = event_pos
                     break
 
             if self.process_adding != True and self.process_adding != False:  # finalize arrow adding process
                 for r in self.model.populations:
                     found = False  # if user clicked something useful
-                    if r.rect.contains(event.pos()):
+                    if r.rect.contains(event_pos):
                         if not(r is self.process_adding):
                             found = r
                             break
@@ -1080,7 +1081,7 @@ class ModelWindow(QWidget):
             if self.process_adding == True:  # process arrow adding, first population needs to be selected
                 for r in self.model.populations:
                     found = False  # if user clicked something useful
-                    if r.rect.contains(event.pos()):
+                    if r.rect.contains(event_pos):
                         found = True
                         self.process_adding = r
                         break
@@ -1095,15 +1096,16 @@ class ModelWindow(QWidget):
             # object to the next one without clicking in done
             objetc_click = None
             process, population = False, False
+            event_pos = event.position().toPoint()
             # check if click on an arrow process
             for p in self.model.processes:
-                if p.contains(event.pos()):
+                if p.contains(event_pos):
                     process = True
                     objetc_click = p
                     break
             # check if click on a population box
             for r in self.model.populations:
-                if r.rect.contains(event.pos()):
+                if r.rect.contains(event_pos):
                     population = True
                     objetc_click = r
                     break
@@ -1178,7 +1180,7 @@ class Model:
         #frame of implementation, and maybe nobody prepared it to work this way...
         app = QApplication(sys.argv)
         ex = ModelWindow(self, app=app)
-        app.exec_()
+        app.exec()
 
     def save(self, filename):
         with open(filename, "wb") as f:
