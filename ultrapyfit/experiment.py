@@ -43,7 +43,7 @@ class SaveExperiment:
         An instance of Experiment class that want to be saved.
         
     save_object: dictionary
-        Object that will be pcikle
+        Object that will be pickled
     """
     def __init__(self, path, experiment, auto_save=True):
         self.path = path
@@ -69,21 +69,55 @@ class SaveExperiment:
         Extract the features of an Experiment instance and add to the 
         save_object dictionary
         """
-        details = {'units': self.experiment._units,
-                   'GVD': self.experiment.preprocessing.GVD_corrected,
-                   'excitation': self.experiment.excitation,
-                   'path': self.experiment._data_path,
-                   'deconv': self.experiment.fitting._deconv,
-                   'n_fits': self.experiment.fitting._fit_number}
+        # 1. Structural Details
+        details = {
+            'units': self.experiment._units,
+            'GVD': self.experiment.preprocessing.GVD_corrected,
+            'excitation': self.experiment.excitation,
+            'path': self.experiment._data_path,
+            'deconv': self.experiment.fitting._deconv,
+            'n_fits': self.experiment.fitting._fit_number,
+            'average_selected_traces': self.experiment._average_selected_traces,
+            'svd_fit_flag': self.experiment._SVD_fit,
+            'color_map': self.experiment.get_color_map()
+        }
 
-        self.save_object["report"] = self.experiment.preprocessing.report
-        self.save_object['fits'] = self.experiment.fitting.fit_records
-        self.save_object['actions'] = self.experiment._action_records
+        # 2. Main Data Matrices
+        self.save_object['x'] = self.experiment.x
+        self.save_object['data'] = self.experiment.data
+        self.save_object['wavelength'] = self.experiment.wavelength
+        self.save_object['selected_traces'] = self.experiment.selected_traces
+        self.save_object['selected_wavelength'] = self.experiment.selected_wavelength
+        
+        # 3. SVD Matrices (PlotSVD state)
+        self.save_object['svd_u'] = self.experiment._U
+        self.save_object['svd_s'] = self.experiment._S
+        self.save_object['svd_v'] = self.experiment._V
+
+        # 4. Preprocessing State
+        self.save_object['report'] = self.experiment.preprocessing.report
         self.save_object['datas'] = self.experiment.preprocessing.data_sets
         self.save_object['history_stack'] = self.experiment.preprocessing.history_stack
-        self.save_object['data'] = self.experiment.data
-        self.save_object['x'] = self.experiment.x
-        self.save_object['wavelength'] = self.experiment.wavelength
+        
+        # 5. Fitting State
+        self.save_object['fits'] = self.experiment.fitting.fit_records
+        fitting_state = {
+            'params': self.experiment.fitting.params,
+            'last_params': self.experiment.fitting._last_params,
+            'params_initialized': self.experiment.fitting._params_initialized,
+            'weights': self.experiment.fitting._weights,
+            'exp_no': self.experiment.fitting._exp_no,
+            'tau_inf': self.experiment.fitting._tau_inf,
+            'model_params': self.experiment.fitting._model_params,
+            'kmatrix_manual': self.experiment.fitting._kmatrix_manual,
+            'init_concentrations_manual': self.experiment.fitting._init_concentrations_manual
+        }
+        self.save_object['fitting_state'] = fitting_state
+
+        # 6. Action Records
+        self.save_object['actions'] = self.experiment._action_records
+        
+        # 7. Finalize Detail
         self.save_object['detail'] = details
 
 
@@ -306,27 +340,66 @@ class Experiment(ExploreData):
                 file_found = True
                 object_load = pickle.load(file)
                 unpickle = True
+                
+                # 1. Basic Data
                 x = object_load['x']
                 data = object_load['data']
                 wavelength = object_load['wavelength']
                 experiment = cls(x, data, wavelength)
-                # updatae preprocesing so that annoatate in the loaded labBook
+                
+                # 2. Data Selection & SVD State
+                experiment.selected_traces = object_load.get('selected_traces', data)
+                experiment.selected_wavelength = object_load.get('selected_wavelength', wavelength)
+                experiment._U = object_load.get('svd_u')
+                experiment._S = object_load.get('svd_s')
+                experiment._V = object_load.get('svd_v')
+
+                # 3. Preprocessing
                 experiment.preprocessing = cls._Preprocessing(experiment,
                                                               object_load["report"])
-                instantiate = True
-                experiment.fitting.fit_records = object_load['fits']
-                experiment.fitting._fits = object_load['fits'].global_fits
-                experiment._action_records = object_load['actions']
                 experiment.preprocessing.data_sets = object_load['datas']
                 experiment.preprocessing.history_stack = object_load.get('history_stack', [])
-                experiment._units = object_load['detail']['units']
-                gvd = object_load['detail']['GVD']
-                experiment.preprocessing.GVD_corrected = gvd
-                experiment.excitation = object_load['detail']['excitation']
-                experiment._data_path = object_load['detail']['path']
-                experiment.fitting._deconv = object_load['detail']['deconv']
-                fit_number = object_load['detail']['n_fits']
-                experiment.fitting._fit_number = fit_number
+                
+                # 4. Fitting Records & State
+                experiment.fitting.fit_records = object_load['fits']
+                if hasattr(experiment.fitting.fit_records, 'global_fits'):
+                    experiment.fitting._fits = experiment.fitting.fit_records.global_fits
+                
+                if 'fitting_state' in object_load:
+                    fs = object_load['fitting_state']
+                    experiment.fitting.params = fs.get('params')
+                    experiment.fitting._last_params = fs.get('last_params')
+                    experiment.fitting._params_initialized = fs.get('params_initialized', False)
+                    experiment.fitting._weights = fs.get('weights')
+                    experiment.fitting._exp_no = fs.get('exp_no', 1)
+                    experiment.fitting._tau_inf = fs.get('tau_inf', 1E12)
+                    experiment.fitting._model_params = fs.get('model_params')
+                    experiment.fitting._kmatrix_manual = fs.get('kmatrix_manual', False)
+                    experiment.fitting._init_concentrations_manual = fs.get('init_concentrations_manual', False)
+
+                # 5. Details & Flags
+                details = object_load.get('detail', {})
+                experiment._units = details.get('units', experiment._units)
+                # Re-sync unit formatter
+                if 'units' in details:
+                    experiment._unit_formater.multiplicator = experiment._units['time_unit']
+                
+                experiment.preprocessing.GVD_corrected = details.get('GVD', False)
+                experiment.excitation = details.get('excitation')
+                experiment._data_path = details.get('path')
+                experiment.fitting._deconv = details.get('deconv', True)
+                experiment.fitting._fit_number = details.get('n_fits', 0)
+                experiment._average_selected_traces = details.get('average_selected_traces', 0)
+                experiment._SVD_fit = details.get('svd_fit_flag', False)
+                
+                color_map = details.get('color_map')
+                if color_map:
+                    experiment.set_color_map(color_map)
+
+                # 6. Action Records
+                experiment._action_records = object_load['actions']
+                
+                instantiate = True
                 load = datetime.datetime.now().strftime(
                     "day: %d %b %Y | hour: %H:%M:%S")
                 experiment._add_action("reload experiment "+load)
@@ -340,8 +413,6 @@ class Experiment(ExploreData):
             if error:
                 if not file_found:
                     msg = 'File not found, incorrect path'
-                elif not file_found:
-                    msg = 'Unable to open the specify file'
                 elif not instantiate:
                     msg = 'File do not correspond to a ultrapyfit Experiment class'
                 elif not unpickle:
@@ -476,6 +547,7 @@ class Experiment(ExploreData):
             self.cut_wavelength = book_annotate(self.report)(self.cut_wavelength)
             self.delete_points = book_annotate(self.report)(self.delete_points)
             self.shift_time = book_annotate(self.report)(self.shift_time)
+            self.correct_overlap = book_annotate(self.report)(self.correct_overlap)
 
         @property
         def chirp_corrected(self):
@@ -870,6 +942,25 @@ class Experiment(ExploreData):
             self._add_to_data_set("before_shift_time")
             self._experiment.x = self._experiment.x - value
             self._experiment._add_action("shift time")
+
+        def correct_overlap(self, stitch_point):
+            """
+            Corrects the overlap between two sensors by stitching them at a 
+            specific wavelength point.
+            
+            Parameters
+            ----------
+            stitch_point: float
+                The wavelength value where the transition from sensor 1 to 
+                sensor 2 should occur.
+            """
+            self._add_to_data_set("before_correct_overlap")
+            new_data, new_wave = Prep.correct_overlap(self._experiment.data,
+                                                      self._experiment.wavelength,
+                                                      stitch_point)
+            self._experiment.data = new_data
+            self._experiment.wavelength = new_wave
+            self._experiment._add_action("correct overlap", True)
 
         def restore_data(self, target_index: int):
             """

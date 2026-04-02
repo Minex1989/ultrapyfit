@@ -23,8 +23,8 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QDockWidget,
     QMainWindow, QMenu, QMenuBar, QPushButton,
     QRadioButton, QSizePolicy, QSlider, QSpacerItem,
     QSpinBox, QSplitter, QStackedWidget, QStatusBar,
-    QTabWidget, QTextBrowser, QToolBox, QToolButton,
-    QTreeWidget, QTreeWidgetItem, QVBoxLayout, QWidget)
+    QTabWidget, QTextBrowser, QToolButton, QTreeWidget,
+    QTreeWidgetItem, QVBoxLayout, QWidget)
 
 from ultrapyfit.gui.widgets.mplwidget import MplWidget
 
@@ -72,6 +72,7 @@ class Ui_MainWindow(object):
         self.horizontalLayout_17.addWidget(self.lblPreprocessingTool)
 
         self.cbPreprocessingTool = QComboBox(self.grpPreprocessingtool)
+        self.cbPreprocessingTool.addItem("")
         self.cbPreprocessingTool.addItem("")
         self.cbPreprocessingTool.addItem("")
         self.cbPreprocessingTool.addItem("")
@@ -469,6 +470,21 @@ class Ui_MainWindow(object):
         self.gridLayout_2.setColumnStretch(1, 1)
         self.gridLayout_2.setColumnStretch(3, 1)
         self.stackedPreprocessTools.addWidget(self.pageChirpSellmeier)
+        self.pageOverlapCorrection = QWidget()
+        self.pageOverlapCorrection.setObjectName(u"pageOverlapCorrection")
+        self.horizontalLayout_19 = QHBoxLayout(self.pageOverlapCorrection)
+        self.horizontalLayout_19.setObjectName(u"horizontalLayout_19")
+        self.lblStitchPoint = QLabel(self.pageOverlapCorrection)
+        self.lblStitchPoint.setObjectName(u"lblStitchPoint")
+
+        self.horizontalLayout_19.addWidget(self.lblStitchPoint)
+
+        self.leStitchPoint = QLineEdit(self.pageOverlapCorrection)
+        self.leStitchPoint.setObjectName(u"leStitchPoint")
+
+        self.horizontalLayout_19.addWidget(self.leStitchPoint)
+
+        self.stackedPreprocessTools.addWidget(self.pageOverlapCorrection)
 
         self.verticalLayout_20.addWidget(self.stackedPreprocessTools)
 
@@ -1176,7 +1192,7 @@ class Ui_MainWindow(object):
         self.sldSvdShowComps.setMinimumSize(QSize(0, 26))
         self.sldSvdShowComps.setMaximumSize(QSize(16777215, 26))
         self.sldSvdShowComps.setMinimum(1)
-        self.sldSvdShowComps.setMaximum(10)
+        self.sldSvdShowComps.setMaximum(15)
         self.sldSvdShowComps.setPageStep(1)
         self.sldSvdShowComps.setValue(3)
         self.sldSvdShowComps.setOrientation(Qt.Orientation.Horizontal)
@@ -1191,7 +1207,7 @@ class Ui_MainWindow(object):
         self.sbSvdShowComps.setMinimumSize(QSize(0, 26))
         self.sbSvdShowComps.setMaximumSize(QSize(16777215, 26))
         self.sbSvdShowComps.setMinimum(1)
-        self.sbSvdShowComps.setMaximum(10)
+        self.sbSvdShowComps.setMaximum(15)
         self.sbSvdShowComps.setValue(3)
 
         self.horizontalLayout_9.addWidget(self.sbSvdShowComps)
@@ -1767,98 +1783,6 @@ class Ui_MainWindow(object):
 
         self.dockExperiments.setWidget(self.dockExperimentsContents)
         MainWindow.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, self.dockExperiments)
-        self.dockProperties = QDockWidget(MainWindow)
-        self.dockProperties.setObjectName(u"dockProperties")
-        sizePolicy7.setHeightForWidth(self.dockProperties.sizePolicy().hasHeightForWidth())
-        self.dockProperties.setSizePolicy(sizePolicy7)
-        self.dockProperties.setMinimumSize(QSize(200, 536))
-        self.dockProperties.setBaseSize(QSize(300, 767))
-        self.dockProperties.setFeatures(QDockWidget.DockWidgetFeature.DockWidgetFloatable|QDockWidget.DockWidgetFeature.DockWidgetMovable)
-        self.dockProperties.setAllowedAreas(Qt.DockWidgetArea.LeftDockWidgetArea|Qt.DockWidgetArea.RightDockWidgetArea)
-        self.dockProperties.setDockLocation(Qt.DockWidgetArea.RightDockWidgetArea)
-        self.dockPropertiesContents = QWidget()
-        self.dockPropertiesContents.setObjectName(u"dockPropertiesContents")
-        self.verticalLayout_3 = QVBoxLayout(self.dockPropertiesContents)
-        self.verticalLayout_3.setSpacing(0)
-        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
-        self.tbxProperties = QToolBox(self.dockPropertiesContents)
-        self.tbxProperties.setObjectName(u"tbxProperties")
-        sizePolicy7.setHeightForWidth(self.tbxProperties.sizePolicy().hasHeightForWidth())
-        self.tbxProperties.setSizePolicy(sizePolicy7)
-        self.pageMetadata = QWidget()
-        self.pageMetadata.setObjectName(u"pageMetadata")
-        self.pageMetadata.setGeometry(QRect(0, 0, 314, 676))
-        self.formLayout_4 = QFormLayout(self.pageMetadata)
-        self.formLayout_4.setObjectName(u"formLayout_4")
-        self.lblTimeMetric = QLabel(self.pageMetadata)
-        self.lblTimeMetric.setObjectName(u"lblTimeMetric")
-        sizePolicy2.setHeightForWidth(self.lblTimeMetric.sizePolicy().hasHeightForWidth())
-        self.lblTimeMetric.setSizePolicy(sizePolicy2)
-        self.lblTimeMetric.setMinimumSize(QSize(0, 0))
-        font3 = QFont()
-        font3.setPointSize(10)
-        font3.setBold(False)
-        font3.setKerning(True)
-        self.lblTimeMetric.setFont(font3)
-
-        self.formLayout_4.setWidget(0, QFormLayout.ItemRole.LabelRole, self.lblTimeMetric)
-
-        self.cbTimeMetric = QComboBox(self.pageMetadata)
-        self.cbTimeMetric.addItem("")
-        self.cbTimeMetric.addItem("")
-        self.cbTimeMetric.addItem("")
-        self.cbTimeMetric.addItem("")
-        self.cbTimeMetric.addItem("")
-        self.cbTimeMetric.setObjectName(u"cbTimeMetric")
-        font4 = QFont()
-        font4.setPointSize(10)
-        font4.setBold(False)
-        self.cbTimeMetric.setFont(font4)
-
-        self.formLayout_4.setWidget(0, QFormLayout.ItemRole.FieldRole, self.cbTimeMetric)
-
-        self.lblWavelengthMetric = QLabel(self.pageMetadata)
-        self.lblWavelengthMetric.setObjectName(u"lblWavelengthMetric")
-        sizePolicy2.setHeightForWidth(self.lblWavelengthMetric.sizePolicy().hasHeightForWidth())
-        self.lblWavelengthMetric.setSizePolicy(sizePolicy2)
-        self.lblWavelengthMetric.setFont(font4)
-
-        self.formLayout_4.setWidget(1, QFormLayout.ItemRole.LabelRole, self.lblWavelengthMetric)
-
-        self.cbWavelengthMetric = QComboBox(self.pageMetadata)
-        self.cbWavelengthMetric.addItem("")
-        self.cbWavelengthMetric.addItem("")
-        self.cbWavelengthMetric.addItem("")
-        self.cbWavelengthMetric.setObjectName(u"cbWavelengthMetric")
-        self.cbWavelengthMetric.setFont(font4)
-
-        self.formLayout_4.setWidget(1, QFormLayout.ItemRole.FieldRole, self.cbWavelengthMetric)
-
-        self.lblMetaShapeDescription = QLabel(self.pageMetadata)
-        self.lblMetaShapeDescription.setObjectName(u"lblMetaShapeDescription")
-
-        self.formLayout_4.setWidget(2, QFormLayout.ItemRole.LabelRole, self.lblMetaShapeDescription)
-
-        self.lblMetaShape = QLabel(self.pageMetadata)
-        self.lblMetaShape.setObjectName(u"lblMetaShape")
-
-        self.formLayout_4.setWidget(2, QFormLayout.ItemRole.FieldRole, self.lblMetaShape)
-
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.formLayout_4.setItem(3, QFormLayout.ItemRole.LabelRole, self.verticalSpacer)
-
-        self.verticalSpacer_2 = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-
-        self.formLayout_4.setItem(3, QFormLayout.ItemRole.FieldRole, self.verticalSpacer_2)
-
-        self.tbxProperties.addItem(self.pageMetadata, u"Metadata")
-
-        self.verticalLayout_3.addWidget(self.tbxProperties)
-
-        self.dockProperties.setWidget(self.dockPropertiesContents)
-        MainWindow.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self.dockProperties)
         self.statusbar = QStatusBar(MainWindow)
         self.statusbar.setObjectName(u"statusbar")
         MainWindow.setStatusBar(self.statusbar)
@@ -1951,9 +1875,7 @@ class Ui_MainWindow(object):
         QWidget.setTabOrder(self.leGlobalKineticsSel, self.textGlobalReport)
         QWidget.setTabOrder(self.textGlobalReport, self.chkSingleDetails)
         QWidget.setTabOrder(self.chkSingleDetails, self.treeExperiment)
-        QWidget.setTabOrder(self.treeExperiment, self.cbTimeMetric)
-        QWidget.setTabOrder(self.cbTimeMetric, self.cbWavelengthMetric)
-        QWidget.setTabOrder(self.cbWavelengthMetric, self.leCutWaveMin)
+        QWidget.setTabOrder(self.treeExperiment, self.leCutWaveMin)
 
         self.menubar.addAction(self.menuFile.menuAction())
         self.menuFile.addAction(self.actImport)
@@ -1987,7 +1909,6 @@ class Ui_MainWindow(object):
         self.stackedFitDataSelection.setCurrentIndex(0)
         self.stackedResultsMain.setCurrentIndex(0)
         self.stackedGlobalSettings.setCurrentIndex(0)
-        self.tbxProperties.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -2011,6 +1932,7 @@ class Ui_MainWindow(object):
         self.cbPreprocessingTool.setItemText(8, QCoreApplication.translate("MainWindow", u"Calibrate Wavelength", None))
         self.cbPreprocessingTool.setItemText(9, QCoreApplication.translate("MainWindow", u"Chirp Correction (Polynomial)", None))
         self.cbPreprocessingTool.setItemText(10, QCoreApplication.translate("MainWindow", u"Chirp Correction (Sellmeier)", None))
+        self.cbPreprocessingTool.setItemText(11, QCoreApplication.translate("MainWindow", u"Correct Overlap", None))
 
         self.grpPreprocessingSettings.setTitle(QCoreApplication.translate("MainWindow", u"Tool Inputs", None))
         self.lblCutTimeMin.setText(QCoreApplication.translate("MainWindow", u"Min Time:", None))
@@ -2058,6 +1980,7 @@ class Ui_MainWindow(object):
         self.lblChirpCaF2.setText(QCoreApplication.translate("MainWindow", u"CaF2:", None))
         self.lblChirpSiO2.setText(QCoreApplication.translate("MainWindow", u"SiO2:", None))
         self.lblChirpOffset.setText(QCoreApplication.translate("MainWindow", u"Offset:", None))
+        self.lblStitchPoint.setText(QCoreApplication.translate("MainWindow", u"Stitch Wavelength", None))
         self.btnApplyPreprocess.setText(QCoreApplication.translate("MainWindow", u"Apply Tool", None))
         self.lblPreprocessHistory.setText(QCoreApplication.translate("MainWindow", u"Action History:", None))
         self.btnUndoPreprocess.setText(QCoreApplication.translate("MainWindow", u"Undo Last Action", None))
@@ -2242,21 +2165,5 @@ class Ui_MainWindow(object):
         self.tabMain.setTabText(self.tabMain.indexOf(self.pageResults), QCoreApplication.translate("MainWindow", u"Result", None))
         self.menuFile.setTitle(QCoreApplication.translate("MainWindow", u"File", None))
         self.dockExperiments.setWindowTitle(QCoreApplication.translate("MainWindow", u"Experiments", None))
-        self.dockProperties.setWindowTitle(QCoreApplication.translate("MainWindow", u"Properties", None))
-        self.lblTimeMetric.setText(QCoreApplication.translate("MainWindow", u"Time unit:", None))
-        self.cbTimeMetric.setItemText(0, QCoreApplication.translate("MainWindow", u"Nanosecond (ns)", None))
-        self.cbTimeMetric.setItemText(1, QCoreApplication.translate("MainWindow", u"Microsecond (\u03bcs)", None))
-        self.cbTimeMetric.setItemText(2, QCoreApplication.translate("MainWindow", u"Picosecond (ps)", None))
-        self.cbTimeMetric.setItemText(3, QCoreApplication.translate("MainWindow", u"Femtosecond (fs)", None))
-        self.cbTimeMetric.setItemText(4, QCoreApplication.translate("MainWindow", u"Attosecond (as)", None))
-
-        self.lblWavelengthMetric.setText(QCoreApplication.translate("MainWindow", u"Waveength unit:", None))
-        self.cbWavelengthMetric.setItemText(0, QCoreApplication.translate("MainWindow", u"Nanometer (nm)", None))
-        self.cbWavelengthMetric.setItemText(1, QCoreApplication.translate("MainWindow", u"Micrometer (\u00b5m)", None))
-        self.cbWavelengthMetric.setItemText(2, QCoreApplication.translate("MainWindow", u"Picometer (pm)", None))
-
-        self.lblMetaShapeDescription.setText(QCoreApplication.translate("MainWindow", u"Datapoints (Time x Trace)", None))
-        self.lblMetaShape.setText(QCoreApplication.translate("MainWindow", u"-", None))
-        self.tbxProperties.setItemText(self.tbxProperties.indexOf(self.pageMetadata), QCoreApplication.translate("MainWindow", u"Metadata", None))
     # retranslateUi
 

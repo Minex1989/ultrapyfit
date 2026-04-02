@@ -94,7 +94,6 @@ class PlotSVD:
         n_components : int, optional
             Number of singular vectors to calculate. Default is 15.
         """
-        from scipy.sparse.linalg import svds
 
         # scipy svds requires k to be strictly less than the minimum dimension
         max_components = min(self.data.shape) - 1
@@ -103,9 +102,9 @@ class PlotSVD:
         u, s, v = svd(self.data, k=n_components)
 
         # Update internal state safely (Encapsulation)
-        self._U = u
-        self._S = s
-        self._V = v
+        self._U = u[:, ::-1]
+        self._S = s[::-1]
+        self._V = v[::-1, :]
 
     def plot_full_svd(self, components=3, log_scale=True):
         """

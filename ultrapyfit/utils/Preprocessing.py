@@ -559,3 +559,55 @@ class Preprocessing:
             return correct_data, details
         else:    
             return correct_data
+
+    @staticmethod
+    def correct_overlap(data, wavelength, stitch_point):
+        """
+        Corrects sensor overlap by removing overlapping data around a stitch point.
+        It detects the boundary between two sensors by finding the largest negative
+        jump in the wavelength array (indicating the start of the second sensor).
+        It then keeps the first sensor's data up to the stitch_point, and the
+        second sensor's data from the stitch_point onwards.
+        
+        Parameters
+        ----------     
+        data: ndarray
+          Original data set where the number of rows should be the time points
+          and the number of columns the wavelength points.
+        wavelength: 1darray
+            Wavelength vector.
+        stitch_point: float
+            The wavelength value where the transition from sensor 1 to sensor 2 
+            should occur.
+            
+        Returns
+        ----------
+        data_res, wave_res: corrected data and wavelength arrays, sorted by wavelength.
+        """
+        diffs = np.diff(wavelength)
+        if np.any(diffs < 0):
+            # Find the sensor split (where wavelength drops, usually the largest negative jump)
+            split_idx = np.argmin(diffs) + 1
+            
+            sensor1_wave = wavelength[:split_idx]
+            sensor1_data = data[:, :split_idx]
+            
+            sensor2_wave = wavelength[split_idx:]
+            sensor2_data = data[:, split_idx:]
+            
+            # Filter sensor 1: keep wavelengths <= stitch_point
+            mask1 = sensor1_wave <= stitch_point
+            # Filter sensor 2: keep wavelengths > stitch_point
+            mask2 = sensor2_wave > stitch_point
+            
+            wave_res = np.concatenate((sensor1_wave[mask1], sensor2_wave[mask2]))
+            data_res = np.concatenate((sensor1_data[:, mask1], sensor2_data[:, mask2]), axis=1)
+        else:
+            # Fallback if no split is detected (already strictly monotonic)
+            _, unique_indices = np.unique(wavelength, return_index=True)
+            wave_res = wavelength[unique_indices]
+            data_res = data[:, unique_indices]
+
+        # Ensure the final output is properly sorted
+        sort_indices = np.argsort(wave_res)
+        return data_res[:, sort_indices], wave_res[sort_indices]

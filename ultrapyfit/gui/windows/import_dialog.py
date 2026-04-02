@@ -76,7 +76,7 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
         If selected, attempts to auto-detect CSV dialect and loads preview.
         """
         dialog = QtWidgets.QFileDialog()
-        dialog.setNameFilter("Szöveges fájlok (*.csv *.txt *.dat);;Összes fájlok (*.*)")
+        dialog.setNameFilter("Text files (*.csv *.txt *.dat);;All files (*.*)")
         dialog.setFileMode(QtWidgets.QFileDialog.FileMode.ExistingFile)
 
         if dialog.exec():
@@ -97,6 +97,7 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
 
             # Refresh UI
             self.update_table_preview()
+
 
     def update_table_preview(self):
         """
@@ -128,10 +129,10 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
             preview_experiment = self.create_experiment()
             # Slice headers
             wavelength_headers = preview_experiment.wavelength
-
             # Slice data
             times = preview_experiment.time
             values_matrix = preview_experiment.data
+            self.lblMetaShape.setText(f"{values_matrix.shape[0]} x {values_matrix.shape[1]}")
 
             # Auto-detect units based on headers
             cleaned_wavelengths, detected_wl_unit = self._process_wavelength_headers(wavelength_headers)
@@ -212,7 +213,7 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
             self.parameters_accepted.emit(experiment)
             self.accept()
         except Exception as e:
-            QtWidgets.QMessageBox.critical(self, "Error", f"Nem sikerült beolvasni a fájlt:\n{str(e)}")
+            QtWidgets.QMessageBox.critical(self, "Error", f"The file could not be opened:\n{str(e)}")
 
     def closeEvent(self, event: QCloseEvent):
         """
@@ -224,8 +225,8 @@ class ImportDialog(QtWidgets.QDialog, Ui_ImportDialog):
 
         reply = QtWidgets.QMessageBox.question(
             self,
-            "Bezárás megerősítése",
-            "Biztosan be akarja zárni a importálás nélkül?",
+            "Confirm closing",
+            "Are you sure you want to close it without importing?",
             QtWidgets.QMessageBox.StandardButton.Yes | QtWidgets.QMessageBox.StandardButton.No,
             QtWidgets.QMessageBox.StandardButton.No
         )

@@ -320,10 +320,16 @@ class ExploreData(PlotSVD):
         cmap = self._get_cmap(cmap)
 
         # 1. Apply Stride (Downsampling) for performance
-        # We slice the arrays: data[::stride]
-        z = self.data.transpose()
-        x = self.x
-        y = self.wavelength
+        stride = max(1, int(stride))
+        
+        # Adaptive Striding: Calculate independent strides to cap maximum polygons
+        target_pts = max(10, int(500 / stride))
+        time_stride = max(1, len(self.x) // target_pts)
+        wave_stride = max(1, len(self.wavelength) // target_pts)
+        
+        x = self.x[::time_stride]
+        y = self.wavelength[::wave_stride]
+        z = self.data[::time_stride, ::wave_stride].transpose()
 
         # Create the meshgrid
         X, Y = np.meshgrid(x, y)
@@ -338,7 +344,7 @@ class ExploreData(PlotSVD):
             # rstride/cstride controls how many polygons are drawn (Visual downsampling)
             surf = ax.plot_surface(X, Y, z, cmap=cmap,
                                    linewidth=0, antialiased=False,
-                                   rstride=stride, cstride=stride)
+                                   rstride=1, cstride=1)
             # 2. CREATE THE COLORBAR BOX GLUED TO THE RIGHT EDGE
             # [x_start, y_start, width, height]
             # x_start = 0.90 means it sits at the 90% mark of the window width
@@ -348,7 +354,7 @@ class ExploreData(PlotSVD):
 
         elif plot_type == 'wireframe':
             # Wireframe is great for seeing "inside" the data
-            ax.plot_wireframe(X, Y, z, rstride=stride, cstride=stride,
+            ax.plot_wireframe(X, Y, z, rstride=1, cstride=1,
                               color='black', linewidth=0.5)
 
         elif plot_type == 'contour':
