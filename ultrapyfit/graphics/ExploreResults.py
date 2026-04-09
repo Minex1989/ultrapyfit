@@ -128,7 +128,7 @@ class ExploreResults:
 
     @use_style
     def plot_global_fit(self, fit_number=None, selection=None,
-                        plot_residues=True, style='lmu_res', ):
+                        plot_residues=True, style='lmu_res'):
         """
         Function that generates a figure with the results of the fit stored in
         the all_fit attributes.  If less than 10 traces are fitted or selected

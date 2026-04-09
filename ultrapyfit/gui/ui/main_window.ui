@@ -3407,7 +3407,7 @@
                    <item>
                     <widget class="QCheckBox" name="chkConvertToEAS">
                      <property name="text">
-                      <string>EAS (Szekvenciális) Spektrumok</string>
+                      <string>EAS (Sequential) Spectra</string>
                      </property>
                     </widget>
                    </item>
@@ -3467,7 +3467,7 @@
                    <item>
                     <widget class="QLabel" name="lblGlobalKineticsSel">
                      <property name="text">
-                      <string>Hullámhosszak (nm):</string>
+                      <string>Wavelengths (nm):</string>
                      </property>
                     </widget>
                    </item>
@@ -3509,7 +3509,7 @@
               </widget>
               <widget class="QGroupBox" name="grpGlobalReport">
                <property name="title">
-                <string>Globális Illesztés Eredményei:</string>
+                <string>Global Fitting Results:</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_16">
                 <property name="topMargin">
@@ -3568,7 +3568,7 @@
                <item>
                 <widget class="QCheckBox" name="chkSingleDetails">
                  <property name="text">
-                  <string>Tau értékek mutatása a grafikonon</string>
+                  <string>Displaying Tau values on the graph</string>
                  </property>
                 </widget>
                </item>

@@ -171,26 +171,28 @@ class GlobalFitResult:
         to_print = [f'Global {type_fit} fit']
         # print_resultados='\t'+',\n\t'.join([f'{name.split("_")[0]}:\t{round(params[name].value,4)}\t{params[name].vary}' for name in names])
         to_print.append('-------------------------------------------------')
-        to_print.append('Results:\tParameter\tInitial value\tFinal value\tVary')
+        to_print.append(f"{'Results:':<12} {'Parameter':<15} {'Initial value':<15} {'Final value':<15} Vary")
         for i in range(len(names)):
-            line = [f'\t{print_names[i]}:',
-                    '{:.4f}'.format(params[names[i]].init_value),
-                    '{:.4f}'.format(params[names[i]].value),
-                    f'{params[names[i]].vary}']
-            to_print.append('\t\t' + '   \t\t'.join(line))
+            p_name = f"{print_names[i]}:"
+            init_val = params[names[i]].init_value
+            i_val_str = f"{init_val:.4f}" if init_val is not None else "None"
+            final_val = params[names[i]].value
+            f_val_str = f"{final_val:.4f}" if final_val is not None else "None"
+            p_vary = str(params[names[i]].vary)
+            to_print.append(f"{'':<12} {p_name:<15} {i_val_str:<15} {f_val_str:<15} {p_vary}")
         to_print.append('Details:')
         if svd_fit:
             trace, avg = 'Nº of singular vectors', '0'
         else:
             trace = 'Nº of traces'
             avg = self.details["avg_traces"]
-        to_print.append(f'\t\t{trace}: {data.shape[1]}; average: {avg}')
+        to_print.append(f"{'':<12} {trace}: {data.shape[1]}; average: {avg}")
         if type_fit == 'Exponential':
-            to_print.append(f'\t\tFit with {exp_no} exponential; Deconvolution {deconv}')
-            to_print.append(f'\t\tTau inf: {tau_inf}')
-        to_print.append(f'\t\tNumber of iterations: {self.nfev}')
-        to_print.append(f'\t\tNumber of parameters optimized: {len(params)}')
-        to_print.append(f'\t\tWeights: {self.weights}')
+            to_print.append(f"{'':<12} Fit with {exp_no} exponential; Deconvolution {deconv}")
+            to_print.append(f"{'':<12} Tau inf: {tau_inf}")
+        to_print.append(f"{'':<12} Number of iterations: {self.nfev}")
+        to_print.append(f"{'':<12} Number of parameters optimized: {len(params)}")
+        to_print.append(f"{'':<12} Weights: {self.weights}")
         return "\n".join(to_print)
 
 

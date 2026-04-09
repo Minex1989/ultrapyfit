@@ -168,4 +168,5 @@ class FittingController:
             experiment.fitting.print_fit_results(fit_number)
         except Exception as e: print(f"Error while generating the report: {e}", file=original_stdout)
         finally: sys.stdout = original_stdout
+        text_browser.setStyleSheet("font-family: 'Courier New', monospace;")
         text_browser.setText(captured_output.getvalue())

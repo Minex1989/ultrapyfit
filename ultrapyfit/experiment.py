@@ -1867,6 +1867,20 @@ class Experiment(ExploreData):
                                                  exp_no, params_fit,
                                                  deconv, tau_inf, False)
                 minimizer.pre_fit()
+                
+                # Run a quick global fit with fixed lifetimes to calculate errors/residuals 
+                # on the real dataset and generate the GlobalFitResult object.
+                results = minimizer.global_fit(vary_taus=False, maxfev=20, 
+                                               apply_weights=False, verbose=False)
+                
+                # Save the new fit result
+                results.details['svd_fit'] = False
+                results.wavelength = self._experiment.selected_wavelength if fit_data == 'all' else self._experiment.wavelength
+                results.details['avg_traces'] = self._experiment._average_selected_traces
+                
+                self._fit_number += 1
+                self.fit_records.global_fits[self._fit_number] = results
+                self._experiment._add_action(f"Full spectra reconstructed from SVD fit {fit_number}")
             else:
                 # Todo
 
@@ -2122,6 +2136,7 @@ class Experiment(ExploreData):
         self.fitting._readapt_params()
         self._average_selected_traces = 0
         self._add_action("Selected region as traces")
+        self._SVD_fit = False
 
     """
     Other private methods
